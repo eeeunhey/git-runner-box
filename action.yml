@@ -1,0 +1,23 @@
+name: "git-runner"
+author: ""
+description: "🏃 A tiny runner that moves with your GitHub activity — Dynamic Pinned Gist"
+
+branding:
+  icon: "activity"
+  color: "green"
+
+inputs:
+  gist_id:
+    description: "The ID of the gist to update"
+    required: true
+  timezone:
+    description: "Timezone for date calculations (e.g. Asia/Seoul, America/New_York)"
+    required: false
+    default: "Asia/Seoul"
+  username:
+    description: "GitHub username (defaults to the token owner)"
+    required: false
+
+runs:
+  using: "node20"
+  main: "dist/index.js"

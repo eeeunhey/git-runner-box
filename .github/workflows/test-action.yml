@@ -1,0 +1,21 @@
+name: 🏃 Test git-runner
+
+on:
+  schedule:
+    - cron: '0 0 * * *'    # 09:00 KST
+    - cron: '0 6 * * *'    # 15:00 KST
+    - cron: '0 12 * * *'   # 21:00 KST
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          gist_id: ${{ secrets.GIST_ID }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}

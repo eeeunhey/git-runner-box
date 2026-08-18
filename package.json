@@ -1,0 +1,26 @@
+{
+  "name": "git-runner-gist",
+  "version": "1.0.0",
+  "description": "🏃 A tiny runner that moves with your GitHub activity",
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "package": "ncc build dist/main.js -o dist --source-map --license licenses.txt && find dist/ -type f \\( -not -name 'index.js' -and -not -name 'index.js.map' -and -not -name 'licenses.txt' \\) -delete",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "all": "npm run build && npm test && npm run package"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@octokit/rest": "^21.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vercel/ncc": "^0.38.3",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
