@@ -107,7 +107,8 @@ The runner dynamically adapts based on your **daily commit count** and **streak 
 
 | State | Daily Commits | Streak Status | Display | Description |
 |---|---|---|---|---|
-| 🏃 **Running** | **≥ 1 commits** | Active (`🔥 N days`) | `● Today (N)` | **Sprint Mode**: You coded today! The runner is actively running through the seasonal course. |
+| 🏃💨 **Sprinting** | **≥ 5 commits** | Active (`🔥 N days`) | `● Today (N)` | **Super Sprint**: High productivity! The runner bursts forward with speed dust (`💨`). |
+| 🏃 **Running** | **1 ~ 4 commits** | Active (`🔥 N days`) | `● Today (N)` | **Running Mode**: You coded today! The runner steadily runs through the course. |
 | 🚶 **Walking** | **0 commits** | Protected (`🔥 N days`) | `○ Today (0)` | **Pacing Mode**: No commits yet today, but yesterday's streak is preserved. Warming up to code! |
 | 🧘 **Resting** | **0 commits** | Reset (`🔥 0 days`) | `○ Today (0)` | **Rest Day**: Recharging for the next journey. A healthy break, zero punishment. |
 

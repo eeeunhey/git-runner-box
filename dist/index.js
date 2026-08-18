@@ -27872,6 +27872,7 @@ const SEASON_MAP = {
 };
 /** Runner 상태 이모지 */
 const RUNNER_EMOJI = {
+    sprinting: '🏃💨',
     running: '🏃',
     walking: '🚶',
     resting: '🧘',
@@ -27909,15 +27910,19 @@ function selectScene(month, day) {
 /**
  * 활동 상태에 따라 runner 이모지를 반환한다.
  *
- * - 오늘 활동함 → 🏃 (Running)
+ * - 오늘 5개 이상 커밋 → 🏃💨 (Sprinting, 폭풍 질주)
+ * - 오늘 1~4개 커밋 → 🏃 (Running, 달리기)
  * - 오늘 아직 미활동이지만 streak 있음 → 🚶 (Walking, 아직 기회 남음)
  * - streak 없음 → 🧘 (Resting, 벌주지 않는 표현)
  *
  * @param todayActive - 오늘 contribution이 있었는지
  * @param currentStreak - 현재 연속 활동일
+ * @param todayCount - 오늘 contribution/커밋 수 (기본값 0)
  * @returns runner 이모지
  */
-function getRunnerEmoji(todayActive, currentStreak) {
+function getRunnerEmoji(todayActive, currentStreak, todayCount = 0) {
+    if (todayCount >= 5)
+        return RUNNER_EMOJI.sprinting;
     if (todayActive)
         return RUNNER_EMOJI.running;
     if (currentStreak > 0)
@@ -32093,7 +32098,7 @@ async function run() {
         core.info(`📈 Stats: streak=${stats.currentStreak}, best=${stats.longestStreak}, active=${stats.activeDays}/${stats.journeyDay}`);
         // 5. 풍경 선택 + runner 상태
         const scene = selectScene(month, day);
-        const runner = getRunnerEmoji(stats.todayActive, stats.currentStreak);
+        const runner = getRunnerEmoji(stats.todayActive, stats.currentStreak, stats.todayCount);
         const courseLine = buildCourseLine(scene, runner);
         core.info(`🎨 Scene: ${courseLine}`);
         // 6. Gist 텍스트 생성

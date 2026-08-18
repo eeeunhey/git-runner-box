@@ -33,6 +33,7 @@ const SEASON_MAP: Record<number, Season> = {
 
 /** Runner 상태 이모지 */
 const RUNNER_EMOJI = {
+  sprinting: '🏃💨',
   running: '🏃',
   walking: '🚶',
   resting: '🧘',
@@ -73,18 +74,22 @@ export function selectScene(month: number, day: number): string {
 /**
  * 활동 상태에 따라 runner 이모지를 반환한다.
  *
- * - 오늘 활동함 → 🏃 (Running)
+ * - 오늘 5개 이상 커밋 → 🏃💨 (Sprinting, 폭풍 질주)
+ * - 오늘 1~4개 커밋 → 🏃 (Running, 달리기)
  * - 오늘 아직 미활동이지만 streak 있음 → 🚶 (Walking, 아직 기회 남음)
  * - streak 없음 → 🧘 (Resting, 벌주지 않는 표현)
  *
  * @param todayActive - 오늘 contribution이 있었는지
  * @param currentStreak - 현재 연속 활동일
+ * @param todayCount - 오늘 contribution/커밋 수 (기본값 0)
  * @returns runner 이모지
  */
 export function getRunnerEmoji(
   todayActive: boolean,
   currentStreak: number,
+  todayCount: number = 0,
 ): string {
+  if (todayCount >= 5) return RUNNER_EMOJI.sprinting
   if (todayActive) return RUNNER_EMOJI.running
   if (currentStreak > 0) return RUNNER_EMOJI.walking
   return RUNNER_EMOJI.resting

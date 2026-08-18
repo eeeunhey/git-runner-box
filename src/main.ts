@@ -81,7 +81,11 @@ async function run(): Promise<void> {
 
     // 5. 풍경 선택 + runner 상태
     const scene = selectScene(month, day)
-    const runner = getRunnerEmoji(stats.todayActive, stats.currentStreak)
+    const runner = getRunnerEmoji(
+      stats.todayActive,
+      stats.currentStreak,
+      stats.todayCount,
+    )
     const courseLine = buildCourseLine(scene, runner)
     core.info(`🎨 Scene: ${courseLine}`)
 

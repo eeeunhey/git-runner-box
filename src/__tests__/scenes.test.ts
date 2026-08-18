@@ -77,21 +77,26 @@ describe('selectScene', () => {
 })
 
 describe('getRunnerEmoji', () => {
-  it('오늘 활동함 → 🏃 (Running)', () => {
-    expect(getRunnerEmoji(true, 5)).toBe('🏃')
+  it('오늘 5개 이상 커밋 → 🏃💨 (Sprinting)', () => {
+    expect(getRunnerEmoji(true, 5, 5)).toBe('🏃💨')
+    expect(getRunnerEmoji(true, 1, 10)).toBe('🏃💨')
+  })
+
+  it('오늘 1~4개 커밋 → 🏃 (Running)', () => {
+    expect(getRunnerEmoji(true, 5, 3)).toBe('🏃')
+    expect(getRunnerEmoji(true, 1, 1)).toBe('🏃')
   })
 
   it('오늘 활동함, streak 0이어도 → 🏃', () => {
-    // todayActive=true면 streak은 최소 1이지만, 방어적으로 테스트
-    expect(getRunnerEmoji(true, 0)).toBe('🏃')
+    expect(getRunnerEmoji(true, 0, 1)).toBe('🏃')
   })
 
   it('오늘 미활동, streak > 0 → 🚶 (Walking)', () => {
-    expect(getRunnerEmoji(false, 3)).toBe('🚶')
+    expect(getRunnerEmoji(false, 3, 0)).toBe('🚶')
   })
 
   it('오늘 미활동, streak = 0 → 🧘 (Resting)', () => {
-    expect(getRunnerEmoji(false, 0)).toBe('🧘')
+    expect(getRunnerEmoji(false, 0, 0)).toBe('🧘')
   })
 })
 
