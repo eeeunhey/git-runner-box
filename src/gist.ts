@@ -11,33 +11,36 @@
 
 import { Octokit } from '@octokit/rest'
 
-/** Pinned Gist에 표시되는 파일명 (카드 제목 역할) */
-const GIST_FILENAME = '🏃 git-runner'
-
 /**
  * GitHub Gist의 내용을 업데이트한다.
  *
  * @param token - GitHub Personal Access Token (gist scope 필요)
  * @param gistId - 업데이트할 Gist의 ID
  * @param content - Gist에 쓸 텍스트 내용
+ * @param filename - Gist에 표시될 파일명 (카드 제목)
  *
  * @throws Error - Gist ID 잘못됨 (404), 토큰 권한 부족 (401/403)
- *
- * @example
- * await updateGist('ghp_...', 'abc123', '🏃 git-runner · 2026\n...')
  */
 export async function updateGist(
   token: string,
   gistId: string,
   content: string,
+  filename: string = '🏃 git-runner',
 ): Promise<void> {
   const octokit = new Octokit({ auth: token })
 
   try {
+    // 기존 파일명을 조회하여 rename 처리 (새 파일이 누적 생성되는 것 방지)
+    const { data: gist } = await octokit.gists.get({ gist_id: gistId })
+    const oldFilename = Object.keys(gist.files || {})[0] || filename
+
     await octokit.gists.update({
       gist_id: gistId,
       files: {
-        [GIST_FILENAME]: { content },
+        [oldFilename]: {
+          filename,
+          content,
+        },
       },
     })
   } catch (error: unknown) {

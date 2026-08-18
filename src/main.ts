@@ -116,9 +116,10 @@ async function run(): Promise<void> {
       core.info(`   ${line}`)
     }
 
-    // 7. Gist 업데이트
-    core.info('🔄 Updating gist...')
-    await updateGist(token, gistId, content)
+    // 7. Gist 업데이트 (러너 상태에 따라 파일명/카드제목 동적 변경)
+    const gistFilename = `${runner} git-runner`
+    core.info(`🔄 Updating gist (Filename: "${gistFilename}")...`)
+    await updateGist(token, gistId, content, gistFilename)
 
     core.info(`✅ Done! Day ${stats.journeyDay}/${totalDays}, Streak ${stats.currentStreak}`)
   } catch (error) {
