@@ -101,13 +101,19 @@ jobs:
 | 🍁 **Autumn** | Sep – Nov | Maple leaves, reeds, autumn moon (`🍁`, `🌾`, `🍂`, `🌙`) |
 | ❄️ **Winter** | Dec – Feb | Snowflakes, sparkles, winter pines (`❄`, `✨`, `🌲`, `🌙`) |
 
-### Runner States
+### 🏃 Runner States & Daily Progression
 
-| State | Condition | Display |
-|---|---|---|
-| 🏃 **Running** | Contributions made today | `● Today` |
-| 🚶 **Walking** | No activity yet today, but streak alive | `○ Today` |
-| 🧘 **Resting** | Rest day (Streak 0) | `○ Today` |
+The runner dynamically adapts based on your **daily commit count** and **streak continuity**:
+
+| State | Daily Commits | Streak Status | Display | Description |
+|---|---|---|---|---|
+| 🏃 **Running** | **≥ 1 commits** | Active (`🔥 N days`) | `● Today (N)` | **Sprint Mode**: You coded today! The runner is actively running through the seasonal course. |
+| 🚶 **Walking** | **0 commits** | Protected (`🔥 N days`) | `○ Today (0)` | **Pacing Mode**: No commits yet today, but yesterday's streak is preserved. Warming up to code! |
+| 🧘 **Resting** | **0 commits** | Reset (`🔥 0 days`) | `○ Today (0)` | **Rest Day**: Recharging for the next journey. A healthy break, zero punishment. |
+
+> 💡 **Design Philosophy**:
+> - **Non-punitive Streak**: If you haven't committed yet today, your previous streak is preserved as `🚶 Walking`. It does not reset until the day fully ends without contributions.
+> - **Live Daily Count**: `● Today (N)` displays the exact number of commits / contributions made today.
 
 ---
 
