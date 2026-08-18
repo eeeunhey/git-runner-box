@@ -96,15 +96,64 @@ export function getRunnerEmoji(
 }
 
 /**
+ * 시간대(0~23시)에 따른 하늘 레이어를 생성한다.
+ *
+ * - 낮 (06:00 ~ 17:59): ☀ 태양 + ☁ 구름
+ * - 노을 (18:00 ~ 20:59): 🌅 석양 + ☁ 구름 + ✨ 별
+ * - 밤 (21:00 ~ 05:59): 🌙 달 + ✨ 별 + ☁ 구름
+ *
+ * @param hour - 해당 Timezone 기준 시간 (0~23)
+ * @returns 렌더링된 하늘 문자열
+ */
+export function getSkyLine(hour: number): string {
+  if (hour >= 6 && hour < 18) {
+    return '       ☀                 ☁'
+  }
+  if (hour >= 18 && hour < 21) {
+    return '       🌅        ☁       ✨'
+  }
+  return '       🌙        ✨       ☁'
+}
+
+/**
+ * 365일 연간 진행률에 따라 실시간으로 러너가 전진하는 게이지 트랙을 생성한다.
+ *
+ * 포맷 예시:
+ * [🌱 ▓▓▓▓▓▓▓▓▓▓▓🏃💨░░░░░░ 🚩] 63%
+ *
+ * @param journeyDay - 1월 1일부터 오늘까지의 일차 (1~366)
+ * @param totalDays - 해당 연도의 총 일수 (365 또는 366)
+ * @param runner - 러너 이모지 (🏃💨, 🏃, 🚶, 🧘)
+ * @returns 완성된 프로그래스 게이지 트랙 문자열
+ */
+export function buildProgressBarTrack(
+  journeyDay: number,
+  totalDays: number,
+  runner: string,
+): string {
+  const totalSlots = 18
+  const clampedDay = Math.max(1, Math.min(journeyDay, totalDays))
+  const progressRatio = clampedDay / totalDays
+  const percentage = Math.round(progressRatio * 100)
+
+  // 러너의 슬롯 위치 (0 ~ totalSlots - 1)
+  const runnerSlot = Math.min(
+    Math.floor(progressRatio * totalSlots),
+    totalSlots - 1,
+  )
+
+  const filledCount = runnerSlot
+  const emptyCount = Math.max(0, totalSlots - 1 - runnerSlot)
+
+  const filled = '▓'.repeat(filledCount)
+  const empty = '░'.repeat(emptyCount)
+
+  return `[🌱 ${filled}${runner}${empty} 🚩] ${percentage}%`
+}
+
+/**
  * Scene template의 {runner} placeholder를 실제 runner 이모지로 치환한다.
- *
- * @param template - {runner}가 포함된 scene template
- * @param runner - runner 이모지 (🏃/🚶/🧘)
- * @returns 완성된 코스 라인
- *
- * @example
- * buildCourseLine("🌿━━━━━━{runner}━━━━🌳━━━━→", "🏃")
- * // → "🌿━━━━━━🏃━━━━🌳━━━━→"
+ * (하위 호환성 유지)
  */
 export function buildCourseLine(template: string, runner: string): string {
   return template.replace('{runner}', runner)

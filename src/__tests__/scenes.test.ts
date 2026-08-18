@@ -9,7 +9,14 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { getSeason, selectScene, getRunnerEmoji, buildCourseLine } from '../scenes.js'
+import {
+  getSeason,
+  selectScene,
+  getRunnerEmoji,
+  buildCourseLine,
+  getSkyLine,
+  buildProgressBarTrack,
+} from '../scenes.js'
 
 describe('getSeason', () => {
   it('1, 2, 12월 → winter', () => {
@@ -112,5 +119,46 @@ describe('buildCourseLine', () => {
     expect(buildCourseLine(template, '🏃')).toContain('🏃')
     expect(buildCourseLine(template, '🚶')).toContain('🚶')
     expect(buildCourseLine(template, '🧘')).toContain('🧘')
+  })
+})
+
+describe('getSkyLine', () => {
+  it('낮 시간 (06~17시) → ☀ 태양과 구름', () => {
+    expect(getSkyLine(6)).toContain('☀')
+    expect(getSkyLine(12)).toContain('☀')
+    expect(getSkyLine(17)).toContain('☀')
+  })
+
+  it('노을 시간 (18~20시) → 🌅 석양과 별', () => {
+    expect(getSkyLine(18)).toContain('🌅')
+    expect(getSkyLine(20)).toContain('🌅')
+  })
+
+  it('밤 시간 (21~05시) → 🌙 달과 별', () => {
+    expect(getSkyLine(21)).toContain('🌙')
+    expect(getSkyLine(0)).toContain('🌙')
+    expect(getSkyLine(5)).toContain('🌙')
+  })
+})
+
+describe('buildProgressBarTrack', () => {
+  it('Day 1 → 러너가 맨 앞에 위치 (0%)', () => {
+    const track = buildProgressBarTrack(1, 365, '🏃')
+    expect(track).toContain('[🌱 🏃')
+    expect(track).toContain('🚩] 0%')
+  })
+
+  it('Day 230/365 → 약 63% 지점에 러너 위치', () => {
+    const track = buildProgressBarTrack(230, 365, '🏃💨')
+    expect(track).toContain('63%')
+    expect(track).toContain('▓')
+    expect(track).toContain('░')
+    expect(track).toContain('🏃💨')
+  })
+
+  it('Day 365/365 → 러너가 맨 끝에 위치 (100%)', () => {
+    const track = buildProgressBarTrack(365, 365, '🏃')
+    expect(track).toContain('100%')
+    expect(track).toContain('🚩]')
   })
 })

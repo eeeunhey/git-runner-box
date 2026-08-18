@@ -21,30 +21,31 @@
 import type { Stats } from './streak.js'
 
 /**
- * Stats와 코스 라인으로 최종 Gist 텍스트를 생성한다.
+ * Stats, 하늘 레이어, 트랙 라인으로 최종 Gist 텍스트를 생성한다.
  *
  * @param stats - streak/active 통계
- * @param courseLine - 풍경 + runner가 포함된 코스 라인
- * @param year - 표시할 연도
- * @returns Gist에 쓸 문자열 (줄바꿈 포함)
+ * @param skyLine - 시간대별 하늘 레이어 (낮 ☀, 노을 🌅, 밤 🌙)
+ * @param trackLine - 러너 게이지 트랙 라인 ([🌱 ▓▓▓🏃💨░░░ 🚩] 63%)
+ * @param totalDays - 해당 연도 총 일수 (365 또는 366)
+ * @returns Gist에 쓸 문자열 (정확히 5줄)
  *
  * @example
- * renderGist(stats, "🌿━━━━━━🏃━━━━━━━━━━🌳", 2026)
- * // "🏃 git-runner · 2026\n\n🌿━━━━━━🏃━━━━━━━━━━🌳\n\n● Today   🔥 8 days   🏆 27   🌱 103/142"
+ * renderGist(stats, "       ☀                 ☁", "[🌱 ▓▓▓▓▓▓▓▓▓▓▓🏃💨░░░░░░ 🚩] 63%", 365)
  */
 export function renderGist(
   stats: Stats,
-  courseLine: string,
-  year: number,
+  skyLine: string,
+  trackLine: string,
+  totalDays: number = 365,
 ): string {
   const todayMarker = stats.todayActive ? '●' : '○'
   const todayText = `${todayMarker} Today (${stats.todayCount})`
   const streakText = stats.currentStreak === 1 ? '1 day' : `${stats.currentStreak} days`
 
   const lines = [
-    `🏃 git-runner · ${year}`,
-    '',
-    courseLine,
+    `🏃 git-runner · Day ${stats.journeyDay} / ${totalDays}`,
+    skyLine,
+    trackLine,
     '',
     `${todayText}   🔥 ${streakText}   🏆 ${stats.longestStreak}   🌱 ${stats.activeDays}/${stats.journeyDay}`,
   ]

@@ -25,54 +25,62 @@ function makeStats(overrides: Partial<Stats> = {}): Stats {
   }
 }
 
-const SAMPLE_COURSE = '🌿━━━━━━🏃━━━━━━━━━━🌳'
+const SAMPLE_SKY = '       ☀                 ☁'
+const SAMPLE_TRACK = '[🌱 ▓▓▓▓▓▓▓▓▓▓▓🏃💨░░░░░░ 🚩] 63%'
 
 describe('renderGist', () => {
   it('정확히 5줄을 출력한다', () => {
-    const result = renderGist(makeStats(), SAMPLE_COURSE, 2026)
+    const result = renderGist(makeStats(), SAMPLE_SKY, SAMPLE_TRACK, 365)
     const lines = result.split('\n')
     expect(lines).toHaveLength(5)
   })
 
-  it('첫 줄에 연도가 포함된다', () => {
-    const result = renderGist(makeStats(), SAMPLE_COURSE, 2026)
+  it('첫 줄에 Day 및 총 일수가 포함된다', () => {
+    const result = renderGist(makeStats({ journeyDay: 230 }), SAMPLE_SKY, SAMPLE_TRACK, 365)
     const firstLine = result.split('\n')[0]!
-    expect(firstLine).toContain('2026')
+    expect(firstLine).toContain('Day 230 / 365')
     expect(firstLine).toContain('git-runner')
   })
 
-  it('세 번째 줄은 코스 라인이다', () => {
-    const result = renderGist(makeStats(), SAMPLE_COURSE, 2026)
-    const thirdLine = result.split('\n')[2]!
-    expect(thirdLine).toBe(SAMPLE_COURSE)
+  it('두 번째 줄은 하늘 라인이다', () => {
+    const result = renderGist(makeStats(), SAMPLE_SKY, SAMPLE_TRACK, 365)
+    const secondLine = result.split('\n')[1]!
+    expect(secondLine).toBe(SAMPLE_SKY)
   })
 
-  it('두 번째, 네 번째 줄은 빈 줄이다', () => {
-    const result = renderGist(makeStats(), SAMPLE_COURSE, 2026)
+  it('세 번째 줄은 트랙 라인이다', () => {
+    const result = renderGist(makeStats(), SAMPLE_SKY, SAMPLE_TRACK, 365)
+    const thirdLine = result.split('\n')[2]!
+    expect(thirdLine).toBe(SAMPLE_TRACK)
+  })
+
+  it('네 번째 줄은 빈 줄이다', () => {
+    const result = renderGist(makeStats(), SAMPLE_SKY, SAMPLE_TRACK, 365)
     const lines = result.split('\n')
-    expect(lines[1]).toBe('')
     expect(lines[3]).toBe('')
   })
 
-  it('active day → ● marker', () => {
+  it('active day → ● marker & count', () => {
     const result = renderGist(
-      makeStats({ todayActive: true }),
-      SAMPLE_COURSE,
-      2026,
+      makeStats({ todayActive: true, todayCount: 5 }),
+      SAMPLE_SKY,
+      SAMPLE_TRACK,
+      365,
     )
     const lastLine = result.split('\n')[4]!
-    expect(lastLine).toContain('●')
+    expect(lastLine).toContain('● Today (5)')
     expect(lastLine).not.toContain('○')
   })
 
-  it('inactive day → ○ marker', () => {
+  it('inactive day → ○ marker & count 0', () => {
     const result = renderGist(
-      makeStats({ todayActive: false }),
-      SAMPLE_COURSE,
-      2026,
+      makeStats({ todayActive: false, todayCount: 0 }),
+      SAMPLE_SKY,
+      SAMPLE_TRACK,
+      365,
     )
     const lastLine = result.split('\n')[4]!
-    expect(lastLine).toContain('○')
+    expect(lastLine).toContain('○ Today (0)')
     expect(lastLine).not.toContain('●')
   })
 
@@ -83,7 +91,7 @@ describe('renderGist', () => {
       activeDays: 184,
       journeyDay: 229,
     })
-    const result = renderGist(stats, SAMPLE_COURSE, 2026)
+    const result = renderGist(stats, SAMPLE_SKY, SAMPLE_TRACK, 365)
     const lastLine = result.split('\n')[4]!
 
     expect(lastLine).toContain('🔥 12 days')
@@ -93,7 +101,7 @@ describe('renderGist', () => {
 
   it('streak 1일 → "1 day" (단수)', () => {
     const stats = makeStats({ currentStreak: 1 })
-    const result = renderGist(stats, SAMPLE_COURSE, 2026)
+    const result = renderGist(stats, SAMPLE_SKY, SAMPLE_TRACK, 365)
     const lastLine = result.split('\n')[4]!
 
     expect(lastLine).toContain('🔥 1 day')
@@ -102,7 +110,7 @@ describe('renderGist', () => {
 
   it('streak 0일 → "0 days"', () => {
     const stats = makeStats({ currentStreak: 0 })
-    const result = renderGist(stats, SAMPLE_COURSE, 2026)
+    const result = renderGist(stats, SAMPLE_SKY, SAMPLE_TRACK, 365)
     const lastLine = result.split('\n')[4]!
 
     expect(lastLine).toContain('🔥 0 days')
