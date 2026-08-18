@@ -1,132 +1,128 @@
-# 🏃 git-runner
-
-> A tiny runner that moves with your GitHub activity — Dynamic Pinned Gist
-
 <p align="center">
-  <img src="https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/git-runner-gist/build.yml?label=CI" alt="CI">
-  <img src="https://img.shields.io/github/license/YOUR_USERNAME/git-runner-gist" alt="License">
+  <img src="https://img.shields.io/github/actions/workflow/status/eeeunhey/git-runner-box/build.yml?label=CI" alt="CI">
+  <img src="https://img.shields.io/github/license/eeeunhey/git-runner-box" alt="License">
 </p>
 
+# 🏃✨ git-runner-box
+
+> Are you keeping your streak alive? Let's check out your 365-day running journey in Gist!
+
 ```text
-🏃 git-runner · 2026
+🏃 git-runner · Day 230 / 365
 
-🌿━━━━━━🏃━━━━━━━━━━🌳
+       ☀                 ☁
+🌱════════════🏃💨───🌳─────────🚩
 
-● Today   🔥 8 days   🏆 27   🌱 103/142
+● Today   🔥 12 days   🏆 85   🌱 156/230
 ```
 
-Your GitHub profile shows a tiny running course that changes every day.
-When you code, the runner runs 🏃. When you rest, the runner rests 🧘. No judgment.
+This project is inspired by the [awesome-pinned-gists](https://github.com/matchai/awesome-pinned-gists) project.
 
-## ✨ Features
+---
 
-- **365-day journey** — Scenery changes with the seasons
-- **Daily scene rotation** — Different landscape every day within each season
-- **Streak tracking** — Current streak, longest streak, active days
-- **No punishment** — Missing a day is resting, not failing
-- **Timezone aware** — Configurable timezone for accurate day boundaries
+## 📌 Overview
 
-## 🚀 Setup (5 minutes)
+This project uses the **GitHub GraphQL API** to fetch your daily contribution history and automatically updates your pinned Gist with a tiny 365-day running course via [@octokit/rest](https://github.com/octokit/rest.js#readme).
 
-### 1. Create a Gist
+---
 
-[Create a new public Gist](https://gist.github.com/) with any filename and content.
+## 🚀 Setup
 
-### 2. Create a Token
+### Prep work
 
-[Create a Personal Access Token](https://github.com/settings/tokens/new) with the `gist` scope.
+1. **Create a new public GitHub Gist** ([https://gist.github.com/](https://gist.github.com/))
+   - Name the file `🏃 git-runner` (or any name you like) and add any placeholder content.
+2. **Create a Personal Access Token** ([https://github.com/settings/tokens/new](https://github.com/settings/tokens/new))
+   - Token type: **Classic Token**
+   - Check the **`gist`** scope (and **`read:user`** scope).
+   - Copy the generated token (`ghp_...`).
 
-### 3. Create a Repository
+---
 
-Create a new repository (or use an existing one) and add the following secrets:
+### Project setup
 
-| Secret | Value |
-|---|---|
-| `GH_TOKEN` | The Personal Access Token from step 2 |
-| `GIST_ID` | The ID of the Gist from step 1 (the long string in the URL) |
+#### Method A: Fork this repository (Easiest)
 
-### 4. Create the Workflow
+1. **Fork** this repo: [eeeunhey/git-runner-box](https://github.com/eeeunhey/git-runner-box)
+2. Open the **"Actions"** tab of your fork and click the **"I understand my workflows, go ahead and enable them"** button.
+3. Go to your repo **Settings > Secrets and variables > Actions**, and add the following:
 
-Create `.github/workflows/git-runner.yml`:
+| Type | Name | Description |
+|---|---|---|
+| **Repository Secret** | `GH_TOKEN` | The GitHub Personal Access Token generated above |
+| **Repository Secret** | `GIST_ID` | The ID portion from your Gist URL, e.g. `https://gist.github.com/user/`<ins>`a1b2c3d4...`</ins> |
+| **Repository Variable** | `TIMEZONE` | *(Optional)* The timezone of your location, e.g. `Asia/Seoul`, `America/New_York` (Default: `Asia/Seoul`) |
+
+4. **Manually run the workflow** for the first time or wait for the scheduled run. (Runs 3 times daily: 00:00, 06:00, 12:00 UTC)
+5. [**Pin the newly created Gist**](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/pinning-items-to-your-profile) to your GitHub profile!
+
+#### Method B: Use as a GitHub Action in your own repo
+
+Add the following workflow file `.github/workflows/git-runner.yml` to your repository:
 
 ```yaml
-name: 🏃 git-runner
+name: Update gist
 
 on:
   schedule:
-    - cron: '0 0,6,12 * * *'  # Every 8 hours
+    - cron: '0 0,6,12 * * *'  # 3 times a day
   workflow_dispatch:           # Manual trigger
 
 jobs:
-  update:
+  update-gist:
     runs-on: ubuntu-latest
     steps:
-      - uses: YOUR_USERNAME/git-runner-gist@v1
+      - uses: eeeunhey/git-runner-box@v1
         with:
           gist_id: ${{ secrets.GIST_ID }}
+          timezone: ${{ vars.TIMEZONE || 'Asia/Seoul' }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 ```
 
-### 5. Pin the Gist
+---
 
-Go to your GitHub profile and pin the Gist!
+### 🕹️ How to run the workflow manually
 
-## ⚙️ Options
+1. Go to the **"Actions"** tab on your repo.
+2. Select the **"Update gist"** workflow on the left sidebar.
+3. Click the **"Run workflow"** button.
 
-| Input | Required | Default | Description |
-|---|---|---|---|
-| `gist_id` | ✅ | — | The ID of the Gist to update |
-| `timezone` | ❌ | `Asia/Seoul` | IANA timezone for date boundaries |
-| `username` | ❌ | Token owner | GitHub username to track |
+---
 
-### Example with all options
+## 🎨 Seasonal Scenes & Runner States
 
-```yaml
-- uses: YOUR_USERNAME/git-runner-gist@v1
-  with:
-    gist_id: ${{ secrets.GIST_ID }}
-    timezone: 'America/New_York'
-    username: 'octocat'
-  env:
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-```
+### Seasonal Course
 
-## 🎨 Seasonal Scenes
-
-The running course changes with the seasons:
-
-| Season | Months | Example |
+| Season | Months | Scenery Theme |
 |---|---|---|
-| 🌸 Spring | Mar–May | `🌸━━━━🏃━━━━━━━━🌸━━━━━━→` |
-| ☀️ Summer | Jun–Aug | `☀━━━━🌻━━🏃━━━━🌻━━━━━━━→` |
-| 🍁 Autumn | Sep–Nov | `🍁━━━━🏃━━━━━━━━🍂━━━━━━→` |
-| ❄️ Winter | Dec–Feb | `❄━━━━✨━━🏃━━━━❄━━━━━━━━━→` |
+| 🌸 **Spring** | Mar – May | Cherry blossoms, sprouts, bees, butterflies (`🌸`, `🌱`, `🐝`, `🦋`) |
+| ☀️ **Summer** | Jun – Aug | Sunshine, waves, sunflowers, green trees (`☀`, `🌊`, `🌻`, `🌳`) |
+| 🍁 **Autumn** | Sep – Nov | Maple leaves, reeds, autumn moon (`🍁`, `🌾`, `🍂`, `🌙`) |
+| ❄️ **Winter** | Dec – Feb | Snowflakes, sparkles, winter pines (`❄`, `✨`, `🌲`, `🌙`) |
 
-Each season has 5 different scenes that rotate daily.
+### Runner States
 
-## 🏃 Runner States
-
-| State | When | Display |
+| State | Condition | Display |
 |---|---|---|
-| 🏃 Running | Today has contributions | `● Today` |
-| 🚶 Walking | No activity yet, but streak alive | `○ Today` |
-| 🧘 Resting | Rest day (no streak) | `○ Today` |
+| 🏃 **Running** | Contributions made today | `● Today` |
+| 🚶 **Walking** | No activity yet today, but streak alive | `○ Today` |
+| 🧘 **Resting** | Rest day (Streak 0) | `○ Today` |
+
+---
 
 ## 📊 Stats Explained
 
 ```text
-● Today   🔥 8 days   🏆 27   🌱 103/142
-│         │           │       │
-│         │           │       └── Active days / Journey day
-│         │           └── Longest streak this year
-│         └── Current streak
+● Today   🔥 12 days   🏆 85   🌱 156/230
+│         │            │       │
+│         │            │       └── Active days (156) / Day of year (230)
+│         │            └── Longest streak this year
+│         └── Current continuous streak
 └── Today's activity (● active / ○ not yet)
 ```
 
-## 📌 Related
-
-This project is inspired by [awesome-pinned-gists](https://github.com/matchai/awesome-pinned-gists).
+---
 
 ## 📄 License
 
