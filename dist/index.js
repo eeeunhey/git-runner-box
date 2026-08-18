@@ -27606,18 +27606,21 @@ var __webpack_exports__ = {};
 var core = __nccwpck_require__(7484);
 ;// CONCATENATED MODULE: ./dist/github.js
 /**
- * github.ts — GitHub GraphQL API를 통한 Contribution Calendar 조회
+ * github.ts — GitHub GraphQL API Contribution Calendar Client / GitHub GraphQL API를 통한 잔디 데이터 조회
  *
- * Purpose: 올해 1월 1일부터 오늘까지의 Contribution Calendar 데이터를 가져온다.
- * Input:   GH_TOKEN, optional username
- * Output:  ContributionDay[] (날짜별 contribution count)
+ * Purpose (목적):
+ *   - EN: Fetches the user's Contribution Calendar from Jan 1 of the current year to today.
+ *   - KR: 올해 1월 1일부터 오늘까지의 GitHub 기여(Contribution) 캘린더 데이터를 조회한다.
  *
- * GitHub GraphQL API의 contributionsCollection은 최대 1년 범위를 지원하므로,
- * 올해 전체를 한 번의 쿼리로 조회할 수 있다.
+ * Input (입력):
+ *   - `GH_TOKEN`: GitHub Personal Access Token (PAT)
+ *   - `username`: (Optional) Target GitHub username / 대상 사용자명
+ *
+ * Output (출력):
+ *   - `ContributionDay[]`: Daily contribution counts in chronological order / 날짜별 기여 횟수 배열
  */
 /**
- * viewer 쿼리: 토큰 소유자 자신의 username을 가져온다.
- * username이 지정되지 않았을 때 사용한다.
+ * GraphQL Query: Fetch viewer login / 로그인한 토큰 소유자의 username 조회
  */
 const VIEWER_LOGIN_QUERY = `
   query {
@@ -27627,8 +27630,7 @@ const VIEWER_LOGIN_QUERY = `
   }
 `;
 /**
- * Contribution Calendar 쿼리.
- * contributionsCollection(from, to)로 올해 범위를 지정한다.
+ * GraphQL Query: Fetch contribution calendar for the year / 연간 기여 캘린더 조회
  */
 const CONTRIBUTION_QUERY = `
   query($username: String!, $from: DateTime!, $to: DateTime!) {
@@ -27647,9 +27649,10 @@ const CONTRIBUTION_QUERY = `
   }
 `;
 /**
- * GitHub GraphQL API에 쿼리를 보낸다.
+ * Sends an authenticated POST request to GitHub's GraphQL API.
+ * GitHub GraphQL API에 인증된 쿼리 요청을 전송한다.
  *
- * @throws Error - 네트워크 오류, 인증 실패, GraphQL 에러
+ * @throws Error - Network failure, authentication failure, or GraphQL errors / 네트워크, 인증, GraphQL 오류
  */
 async function graphqlRequest(token, query, variables) {
     const response = await fetch('https://api.github.com/graphql', {
@@ -27664,21 +27667,22 @@ async function graphqlRequest(token, query, variables) {
     });
     if (!response.ok) {
         if (response.status === 401) {
-            throw new Error('GitHub API 인증 실패: GH_TOKEN이 설정되지 않았거나 만료되었습니다.');
+            throw new Error('GitHub API Authentication Failed: GH_TOKEN is invalid or expired. / GitHub API 인증 실패: GH_TOKEN이 설정되지 않았거나 만료되었습니다.');
         }
-        throw new Error(`GitHub API 요청 실패: HTTP ${response.status} ${response.statusText}`);
+        throw new Error(`GitHub API Request Failed: HTTP ${response.status} ${response.statusText} / GitHub API 요청 실패`);
     }
     const result = (await response.json());
     if (result.errors && result.errors.length > 0) {
         const messages = result.errors.map((e) => e.message).join(', ');
-        throw new Error(`GitHub GraphQL 에러: ${messages}`);
+        throw new Error(`GitHub GraphQL Error: ${messages} / GitHub GraphQL 에러`);
     }
     if (!result.data) {
-        throw new Error('GitHub API에서 빈 응답을 받았습니다.');
+        throw new Error('Received empty response from GitHub API. / GitHub API에서 빈 응답을 받았습니다.');
     }
     return result.data;
 }
 /**
+ * Fetches the authenticated user's login username.
  * 토큰 소유자의 GitHub username을 조회한다.
  */
 async function fetchViewerLogin(token) {
@@ -27686,15 +27690,12 @@ async function fetchViewerLogin(token) {
     return data.viewer.login;
 }
 /**
- * 올해 1월 1일부터 오늘까지의 Contribution Calendar를 조회한다.
+ * Fetches the Contribution Calendar from Jan 1 of the current year to today.
+ * 올해 1월 1일부터 오늘까지의 Contribution Calendar 데이터를 조회한다.
  *
- * @param token - GitHub Personal Access Token (read:user scope 필요)
- * @param username - GitHub username. 없으면 토큰 소유자를 자동 조회.
- * @returns 날짜별 contribution 데이터 (날짜 오름차순)
- *
- * @example
- * const days = await fetchContributionCalendar('ghp_...', 'octocat')
- * // [{ date: '2026-01-01', count: 0 }, { date: '2026-01-02', count: 5 }, ...]
+ * @param token - GitHub Personal Access Token (requires `read:user` or `repo` scope) / GitHub PAT
+ * @param username - Target username (auto-detected if omitted) / 대상 사용자명 (생략 시 자동 조회)
+ * @returns Array of daily contribution objects / 날짜별 기여 데이터 배열
  */
 async function fetchContributionCalendar(token, username) {
     const resolvedUsername = username || (await fetchViewerLogin(token));
@@ -27721,28 +27722,27 @@ async function fetchContributionCalendar(token, username) {
 //# sourceMappingURL=github.js.map
 ;// CONCATENATED MODULE: ./dist/streak.js
 /**
- * streak.ts — Contribution 데이터에서 streak/active 통계 계산
+ * streak.ts — GitHub Streak & Contribution Statistics Calculator / 잔디 스트릭 및 활동 통계 계산
  *
- * Purpose: Contribution Calendar에서 streak, active days, journey day를 계산한다.
- * Input:   ContributionDay[], 오늘 날짜
- * Output:  Stats
+ * Purpose (목적):
+ *   - EN: Derives current streak, longest streak, active days, journey day, and today's commit count from contribution data.
+ *   - KR: GitHub 기여 데이터로부터 현재 스트릭, 최장 스트릭, 총 활동일, 연간 여정 일수, 당일 커밋 수를 계산한다.
  *
- * 설계 원칙:
- * - 하루 빠졌다고 벌주지 않는다 (오늘 아직 미활동이면 어제 기준 streak 유지)
- * - Journey는 활동과 무관하게 1/1부터 계속 증가한다
- * - current_streak: 연속 활동일 (오늘 기준 또는 어제 기준)
- * - longest_streak: 올해 최대 연속 활동일
+ * Design Principles (설계 원칙):
+ *   - EN: Non-punitive design: If no contributions yet today, yesterday's streak is preserved.
+ *   - KR: 비처벌적 설계: 오늘 아직 커밋하지 않았더라도 어제까지의 스트릭을 보존한다.
  */
 /**
- * ISO date 문자열("2026-08-17")에서 Date 객체를 생성한다.
- * timezone 영향을 받지 않도록 UTC 기준으로 파싱한다.
+ * Parses an ISO date string ("2026-08-17") to a UTC Date object.
+ * ISO date 문자열에서 UTC 기준 Date 객체를 생성한다.
  */
 function parseDate(dateStr) {
     const [year, month, day] = dateStr.split('-').map(Number);
     return new Date(Date.UTC(year, month - 1, day));
 }
 /**
- * Date를 ISO date 문자열("2026-08-17")로 변환한다.
+ * Formats a Date object to an ISO date string ("2026-08-17").
+ * Date 객체를 YYYY-MM-DD 포맷의 ISO 문자열로 변환한다.
  */
 function formatDate(date) {
     const y = date.getUTCFullYear();
@@ -27751,22 +27751,24 @@ function formatDate(date) {
     return `${y}-${m}-${d}`;
 }
 /**
- * 두 날짜 사이의 일 수 차이를 구한다.
+ * Computes the number of days between two dates.
+ * 두 날짜 사이의 일 수 차이를 계산한다.
  */
 function daysBetween(a, b) {
     const msPerDay = 86_400_000;
     return Math.floor((b.getTime() - a.getTime()) / msPerDay);
 }
 /**
- * Contribution Calendar 데이터에서 통계를 계산한다.
+ * Computes comprehensive streak and activity statistics from daily contribution records.
+ * Contribution Calendar 데이터에서 streak, active days, journey day 통계를 계산한다.
  *
- * @param contributions - 날짜별 contribution 데이터 (순서 무관, 내부에서 정렬)
- * @param today - 기준 날짜 (timezone 적용된 "오늘")
- * @returns 계산된 통계
+ * @param contributions - Array of daily contribution records / 날짜별 기여 데이터
+ * @param today - Target date in the user's timezone / timezone 기준 오늘 날짜
+ * @returns Computed statistics / 계산된 통계 객체
  *
  * @example
  * const stats = calculateStats(contributions, new Date('2026-08-17'))
- * // { todayActive: true, currentStreak: 8, longestStreak: 27, activeDays: 103, journeyDay: 229 }
+ * // { todayActive: true, todayCount: 5, currentStreak: 12, longestStreak: 85, activeDays: 156, journeyDay: 230 }
  */
 function calculateStats(contributions, today) {
     const todayStr = formatDate(today);
@@ -27782,7 +27784,7 @@ function calculateStats(contributions, today) {
             journeyDay,
         };
     }
-    // 날짜별 count 및 active 여부를 Map으로 구성 (빠른 조회)
+    // EN: Build a fast-lookup map for active status per date / KR: 날짜별 count 및 active 여부 맵
     const activeMap = new Map();
     let todayCount = 0;
     for (const day of contributions) {
@@ -27791,17 +27793,16 @@ function calculateStats(contributions, today) {
             todayCount = day.count;
         }
     }
-    // 오늘 활동 여부
+    // EN: Check if there was activity today / KR: 오늘 활동 여부
     const todayActive = todayCount > 0;
-    // 총 활동일
+    // EN: Compute total active days / KR: 올해 총 활동일수
     let activeDays = 0;
     for (const [, isActive] of activeMap) {
         if (isActive)
             activeDays++;
     }
-    // 현재 streak 계산
-    // 오늘 active → 오늘부터 역순 카운트
-    // 오늘 !active → 어제부터 역순 카운트 (오늘은 아직 기회가 남았으므로)
+    // EN: Compute current continuous streak (count backwards from today if active, else from yesterday)
+    // KR: 현재 streak 계산 (오늘 활동 시 오늘부터, 미활동 시 어제부터 역순 계산)
     let currentStreak = 0;
     const startDate = todayActive ? today : new Date(today.getTime() - 86_400_000);
     for (let d = new Date(startDate); d >= yearStart; d = new Date(d.getTime() - 86_400_000)) {
@@ -27813,8 +27814,7 @@ function calculateStats(contributions, today) {
             break;
         }
     }
-    // 최대 streak 계산 (올해 전체)
-    // 날짜 정렬 후 순차 순회
+    // EN: Compute longest continuous streak this year / KR: 올해 최대 연속 활동일 계산
     const sortedDates = Array.from(activeMap.keys()).sort();
     let longestStreak = 0;
     let tempStreak = 0;
@@ -27843,19 +27843,14 @@ function calculateStats(contributions, today) {
 const scenes_namespaceObject = {};
 ;// CONCATENATED MODULE: ./dist/scenes.js
 /**
- * scenes.ts — 월/일에 따른 풍경 선택, runner 상태 결정
+ * scenes.ts — Seasonal Scenes, Runner Progression & Track Builder / 계절 풍경, 러너 상태 및 트랙 생성
  *
- * Purpose: 계절별 Scene 데이터에서 오늘의 풍경을 결정론적으로 선택하고,
- *          활동 상태에 따라 runner 이모지를 결정한다.
- * Input:   월, 일, 활동 상태
- * Output:  완성된 코스 라인 문자열
- *
- * 결정론적 설계:
- *   같은 날에는 항상 같은 풍경이 나온다 (day % scenes.length).
- *   별도의 랜덤 시드나 상태 저장이 불필요하다.
+ * Purpose (목적):
+ *   - EN: Deterministically selects scenery by date, computes runner state by activity, renders dynamic skies by hour, builds progress bar tracks, and derives marathon title tiers.
+ *   - KR: 월/일에 따른 계절 풍경 선택, 활동량에 따른 러너 상태 결정, 시간대별 하늘 렌더링, 365일 게이지 트랙 및 마라톤 승급 타이틀을 생성한다.
  */
 
-/** 월 → 계절 매핑 */
+/** Month → Season mapping / 월별 계절 매핑 */
 const SEASON_MAP = {
     1: 'winter',
     2: 'winter',
@@ -27870,36 +27865,34 @@ const SEASON_MAP = {
     11: 'autumn',
     12: 'winter',
 };
-/** Runner 상태 이모지 */
+/** Runner State Emojis / 러너 활동 상태 이모지 */
 const RUNNER_EMOJI = {
-    sprinting: '🏃💨',
-    running: '🏃',
-    walking: '🚶',
-    resting: '🧘',
+    sprinting: '🏃💨', // ≥ 5 commits today / 오늘 5개 이상 커밋 (폭풍 질주)
+    running: '🏃', // 1~4 commits today / 오늘 1~4개 커밋 (일반 달리기)
+    walking: '🚶', // 0 commits today, streak > 0 / 오늘 미활동이나 스트릭 유지 (워밍업 걷기)
+    resting: '🧘', // 0 commits today, streak = 0 / 스트릭 없음 (재충전 휴식)
 };
 /**
- * 월 번호로 계절을 반환한다.
+ * Returns the season corresponding to the given month (1~12).
+ * 주어진 월(1~12)에 해당하는 계절을 반환한다.
  *
- * @param month - 1~12
- * @returns Season
+ * @param month - Month number (1~12) / 월 번호
+ * @returns Season ('spring' | 'summer' | 'autumn' | 'winter')
  */
 function getSeason(month) {
     const season = SEASON_MAP[month];
     if (!season) {
-        throw new Error(`잘못된 월: ${month} (1~12 사이여야 합니다)`);
+        throw new Error(`Invalid month: ${month} (must be 1-12) / 잘못된 월: ${month}`);
     }
     return season;
 }
 /**
- * 오늘의 풍경 template을 선택한다.
- * day % scenes.length로 결정론적 선택 — 같은 날에는 항상 같은 풍경.
+ * Deterministically selects a scene template based on month and day.
+ * 오늘의 풍경 template을 선택한다 (같은 날에는 항상 같은 풍경 출력).
  *
- * @param month - 1~12
- * @param day - 1~31
- * @returns {runner} placeholder가 포함된 scene template 문자열
- *
- * @example
- * selectScene(4, 15) // → "🌸━━━━{runner}━━━━━━━━🌸━━━━━━→"
+ * @param month - Month (1~12)
+ * @param day - Day of month (1~31)
+ * @returns Scene template string containing `{runner}` placeholder / 풍경 템플릿 문자열
  */
 function selectScene(month, day) {
     const season = getSeason(month);
@@ -27908,17 +27901,18 @@ function selectScene(month, day) {
     return scenes[index];
 }
 /**
- * 활동 상태에 따라 runner 이모지를 반환한다.
+ * Determines the runner emoji based on today's contribution count and streak.
+ * 오늘의 기여(커밋) 수와 연속 스트릭에 따라 러너 이모지를 결정한다.
  *
- * - 오늘 5개 이상 커밋 → 🏃💨 (Sprinting, 폭풍 질주)
- * - 오늘 1~4개 커밋 → 🏃 (Running, 달리기)
- * - 오늘 아직 미활동이지만 streak 있음 → 🚶 (Walking, 아직 기회 남음)
- * - streak 없음 → 🧘 (Resting, 벌주지 않는 표현)
+ * - ≥ 5 commits today  ➔ 🏃💨 (Sprinting / 폭풍 질주)
+ * - 1~4 commits today  ➔ 🏃 (Running / 달리기)
+ * - 0 commits + streak ➔ 🚶 (Walking / 워밍업 걷기)
+ * - 0 commits + 0 streak ➔ 🧘 (Resting / 휴식)
  *
- * @param todayActive - 오늘 contribution이 있었는지
- * @param currentStreak - 현재 연속 활동일
- * @param todayCount - 오늘 contribution/커밋 수 (기본값 0)
- * @returns runner 이모지
+ * @param todayActive - Whether there was activity today / 오늘 활동 여부
+ * @param currentStreak - Current continuous streak in days / 현재 연속 활동일
+ * @param todayCount - Total contribution count today / 오늘 기여(커밋) 수
+ * @returns Runner emoji string / 러너 이모지 문자열
  */
 function getRunnerEmoji(todayActive, currentStreak, todayCount = 0) {
     if (todayCount >= 5)
@@ -27930,14 +27924,15 @@ function getRunnerEmoji(todayActive, currentStreak, todayCount = 0) {
     return RUNNER_EMOJI.resting;
 }
 /**
+ * Generates the dynamic sky layer based on the current hour of the day (0~23).
  * 시간대(0~23시)에 따른 하늘 레이어를 생성한다.
  *
- * - 낮 (06:00 ~ 17:59): ☀ 태양 + ☁ 구름
- * - 노을 (18:00 ~ 20:59): 🌅 석양 + ☁ 구름 + ✨ 별
- * - 밤 (21:00 ~ 05:59): 🌙 달 + ✨ 별 + ☁ 구름
+ * - Day (06:00 ~ 17:59) / 낮: ☀ Sun + ☁ Cloud
+ * - Sunset (18:00 ~ 20:59) / 노을: 🌅 Sunset + ☁ Cloud + ✨ Star
+ * - Night (21:00 ~ 05:59) / 밤: 🌙 Moon + ✨ Star + ☁ Cloud
  *
- * @param hour - 해당 Timezone 기준 시간 (0~23)
- * @returns 렌더링된 하늘 문자열
+ * @param hour - Current hour in the user's timezone (0~23) / 해당 Timezone 기준 시간
+ * @returns Formatted sky string / 렌더링된 하늘 문자열
  */
 function getSkyLine(hour) {
     if (hour >= 6 && hour < 18) {
@@ -27949,22 +27944,23 @@ function getSkyLine(hour) {
     return '       🌙        ✨       ☁';
 }
 /**
+ * Builds the 365-day annual progress bar gauge track with the real-time runner position.
  * 365일 연간 진행률에 따라 실시간으로 러너가 전진하는 게이지 트랙을 생성한다.
  *
- * 포맷 예시:
- * [🌱 ▓▓▓▓▓▓▓▓▓▓▓🏃💨░░░░░░ 🚩] 63%
+ * Output Example (예시):
+ * `[🌱 ▓▓▓▓▓▓▓▓▓▓▓🏃💨░░░░░░ 🚩] 63%`
  *
- * @param journeyDay - 1월 1일부터 오늘까지의 일차 (1~366)
- * @param totalDays - 해당 연도의 총 일수 (365 또는 366)
- * @param runner - 러너 이모지 (🏃💨, 🏃, 🚶, 🧘)
- * @returns 완성된 프로그래스 게이지 트랙 문자열
+ * @param journeyDay - Day of the year from Jan 1 (1~366) / 1월 1일부터 오늘까지의 일차
+ * @param totalDays - Total days in the year (365 or 366) / 해당 연도의 총 일수
+ * @param runner - Runner emoji / 러너 이모지 (🏃💨, 🏃, 🚶, 🧘)
+ * @returns Formatted progress gauge track string / 완성된 게이지 트랙 문자열
  */
 function buildProgressBarTrack(journeyDay, totalDays, runner) {
     const totalSlots = 18;
     const clampedDay = Math.max(1, Math.min(journeyDay, totalDays));
     const progressRatio = clampedDay / totalDays;
     const percentage = Math.round(progressRatio * 100);
-    // 러너의 슬롯 위치 (0 ~ totalSlots - 1)
+    // EN: Runner slot index (0 ~ totalSlots - 1) / KR: 러너의 슬롯 위치
     const runnerSlot = Math.min(Math.floor(progressRatio * totalSlots), totalSlots - 1);
     const filledCount = runnerSlot;
     const emptyCount = Math.max(0, totalSlots - 1 - runnerSlot);
@@ -27973,17 +27969,19 @@ function buildProgressBarTrack(journeyDay, totalDays, runner) {
     return `[🌱 ${filled}${runner}${empty} 🚩] ${percentage}%`;
 }
 /**
+ * Generates the Marathon Division Card Title based on cumulative active days (1 active day = 1 km).
  * 누적 활동일(activeDays = 누적 주행 거리 km)에 따라 마라토너 등급 카드 제목을 반환한다.
  *
- * - 0 ~ 20km:   👟 5K City Jogger (Nkm)
- * - 21 ~ 50km:  🏃 10K Road Racer (Nkm)
- * - 51 ~ 100km: 🏅 Half-Marathon Runner (Nkm)
- * - 101 ~ 150km:🏆 Full-Marathon Finisher (Nkm)
- * - 151 ~ 250km:🚀 Ultra-Marathoner (Nkm)
- * - 251km+:     👑 Trans-Continental Marathoner (Nkm)
+ * Mileage Tiers (마라톤 승급 등급):
+ *   - 0 ~ 20km:   👟 5K City Jogger (Nkm)
+ *   - 21 ~ 50km:  🏃 10K Road Racer (Nkm)
+ *   - 51 ~ 100km: 🏅 Half-Marathon Runner (Nkm)
+ *   - 101 ~ 150km:🏆 Full-Marathon Finisher (Nkm)
+ *   - 151 ~ 250km:🚀 Ultra-Marathoner (Nkm)
+ *   - 251km+:     👑 Trans-Continental Marathoner (Nkm)
  *
- * @param activeDays - 올해 총 활동일 수 (1일 = 1km 주행)
- * @returns Gist 카드 제목 (Filename)
+ * @param activeDays - Total active contribution days this year (1 day = 1 km) / 올해 총 활동일 수
+ * @returns Gist Card Title string / Gist 카드 제목 (파일명)
  */
 function getMarathonTitle(activeDays) {
     const km = activeDays;
@@ -28000,8 +27998,8 @@ function getMarathonTitle(activeDays) {
     return `👑 Trans-Continental Marathoner (${km}km)`;
 }
 /**
- * Scene template의 {runner} placeholder를 실제 runner 이모지로 치환한다.
- * (하위 호환성 유지)
+ * Replaces `{runner}` placeholder with the active runner emoji (Backwards compatibility).
+ * Scene template의 {runner} placeholder를 실제 runner 이모지로 치환한다 (하위 호환성).
  */
 function buildCourseLine(template, runner) {
     return template.replace('{runner}', runner);
@@ -28009,32 +28007,32 @@ function buildCourseLine(template, runner) {
 //# sourceMappingURL=scenes.js.map
 ;// CONCATENATED MODULE: ./dist/renderer.js
 /**
- * renderer.ts — 최종 Gist 텍스트 생성
+ * renderer.ts — Gist Text Content Formatter / 최종 Gist 텍스트 생성
  *
- * Purpose: Stats + 코스 라인을 받아 Pinned Gist에 표시될 4~5줄 텍스트를 생성한다.
- * Input:   Stats, 코스 라인, 연도
- * Output:  Gist에 쓸 문자열
+ * Purpose (목적):
+ *   - EN: Combines stats, dynamic time-of-day sky, and the 365-day progress bar track into a polished 5-line Gist card.
+ *   - KR: 통계, 시간대별 하늘, 365일 러너 게이지 트랙을 조합하여 5줄 Pinned Gist 카드를 생성한다.
  *
- * 출력 포맷:
- *   🏃 git-runner · 2026
+ * Output Layout (출력 포맷):
+ *   Line 1: 🏃 git-runner · Day 230 / 365
+ *   Line 2:        ☀                 ☁
+ *   Line 3: [🌱 ▓▓▓▓▓▓▓▓▓▓▓🏃💨░░░░░░ 🚩] 63%
+ *   Line 4:
+ *   Line 5: ● Today (5)   🔥 12 days   🏆 85   🌱 156/230
  *
- *   🌿━━━━━━🏃━━━━━━━━━━🌳
- *
- *   ● Today   🔥 8 days   🏆 27   🌱 103/142
- *
- * 설계 원칙:
- * - 최대 5줄 (헤더, 빈 줄, 코스, 빈 줄, 스탯)
- * - Pinned Gist 카드 크기에 최적화 (~50자 폭)
- * - 숫자보다 "계속 달리고 있다는 느낌"이 중요
+ * Design Principles (설계 원칙):
+ *   - Exactly 5 lines to perfectly fit GitHub's pinned gist container.
+ *   - Pinned Gist 카드 규격(가로 ~45자, 세로 5줄)에 완벽히 맞춤.
  */
 /**
+ * Generates the complete 5-line string to be written into the Pinned Gist.
  * Stats, 하늘 레이어, 트랙 라인으로 최종 Gist 텍스트를 생성한다.
  *
- * @param stats - streak/active 통계
- * @param skyLine - 시간대별 하늘 레이어 (낮 ☀, 노을 🌅, 밤 🌙)
- * @param trackLine - 러너 게이지 트랙 라인 ([🌱 ▓▓▓🏃💨░░░ 🚩] 63%)
- * @param totalDays - 해당 연도 총 일수 (365 또는 366)
- * @returns Gist에 쓸 문자열 (정확히 5줄)
+ * @param stats - Streak and active contribution statistics / 통계 데이터
+ * @param skyLine - Dynamic sky layer based on time of day / 시간대별 하늘 레이어 (☀, 🌅, 🌙)
+ * @param trackLine - 365-day runner progress bar track / 러너 게이지 트랙 ([🌱 ▓▓▓🏃💨░░░ 🚩] 63%)
+ * @param totalDays - Total days in the current year (365 or 366) / 해당 연도 총 일수
+ * @returns Formatted 5-line string with newlines / 정확히 5줄로 완성된 문자열
  *
  * @example
  * renderGist(stats, "       ☀                 ☁", "[🌱 ▓▓▓▓▓▓▓▓▓▓▓🏃💨░░░░░░ 🚩] 63%", 365)
@@ -32042,30 +32040,34 @@ const dist_src_Octokit = Octokit.plugin(requestLog, legacyRestEndpointMethods, p
 
 ;// CONCATENATED MODULE: ./dist/gist.js
 /**
- * gist.ts — GitHub REST API로 Gist 내용 업데이트
+ * gist.ts — GitHub REST API Gist Updater / GitHub REST API로 Gist 내용 업데이트
  *
- * Purpose: 생성된 텍스트를 Pinned Gist에 반영한다.
- * Input:   GH_TOKEN, GIST_ID, 텍스트 내용
- * Output:  없음 (side effect: Gist 업데이트)
+ * Purpose (목적):
+ *   - EN: Updates the Pinned Gist content and renames the file title via Octokit.
+ *   - KR: 생성된 텍스트와 마라톤 타이틀을 Pinned Gist에 반영한다.
  *
- * Octokit REST SDK를 사용하여 PATCH /gists/{gist_id} 호출.
- * ncc로 번들링되므로 추가 런타임 설치 불필요.
+ * Execution Details (실행 세부사항):
+ *   - Calls `PATCH /gists/{gist_id}` using `@octokit/rest`.
+ *   - Handles in-place filename renaming to prevent duplicate file accumulation.
+ *   - Octokit REST SDK를 사용하여 PATCH /gists/{gist_id} 호출 및 파일명 동적 리네임.
  */
 
 /**
- * GitHub Gist의 내용을 업데이트한다.
+ * Updates the content and title (filename) of a GitHub Gist.
+ * GitHub Gist의 내용 및 카드 제목(파일명)을 업데이트한다.
  *
- * @param token - GitHub Personal Access Token (gist scope 필요)
- * @param gistId - 업데이트할 Gist의 ID
- * @param content - Gist에 쓸 텍스트 내용
- * @param filename - Gist에 표시될 파일명 (카드 제목)
+ * @param token - GitHub Personal Access Token (requires `gist` scope) / GitHub PAT (gist 권한 필요)
+ * @param gistId - Target Gist ID / 업데이트할 Gist의 고유 ID
+ * @param content - Text content to write into the Gist / Gist에 기록할 본문 텍스트
+ * @param filename - Card title / Gist에 표시될 파일명 (기본값: '🏃 git-runner')
  *
- * @throws Error - Gist ID 잘못됨 (404), 토큰 권한 부족 (401/403)
+ * @throws Error - 404 (Invalid Gist ID) or 401/403 (Unauthorized token scope)
  */
 async function updateGist(token, gistId, content, filename = '🏃 git-runner') {
     const octokit = new dist_src_Octokit({ auth: token });
     try {
-        // 기존 파일명을 조회하여 rename 처리 (새 파일이 누적 생성되는 것 방지)
+        // EN: Query existing filename to perform an in-place rename (prevents duplicate file accumulation).
+        // KR: 기존 파일명을 조회하여 rename 처리 (새 파일이 누적 생성되는 것 방지).
         const { data: gist } = await octokit.gists.get({ gist_id: gistId });
         const oldFilename = Object.keys(gist.files || {})[0] || filename;
         await octokit.gists.update({
@@ -32082,10 +32084,10 @@ async function updateGist(token, gistId, content, filename = '🏃 git-runner') 
         if (error instanceof Error && 'status' in error) {
             const status = error.status;
             if (status === 404) {
-                throw new Error(`Gist를 찾을 수 없습니다 (ID: ${gistId}). GIST_ID를 확인해주세요.`);
+                throw new Error(`Gist not found (ID: ${gistId}). Please verify your GIST_ID. / Gist를 찾을 수 없습니다 (ID: ${gistId}). GIST_ID를 확인해주세요.`);
             }
             if (status === 401 || status === 403) {
-                throw new Error('Gist 업데이트 권한이 없습니다. GH_TOKEN에 gist scope가 필요합니다.');
+                throw new Error('Unauthorized to update Gist. Please ensure GH_TOKEN has "gist" scope. / Gist 업데이트 권한이 없습니다. GH_TOKEN에 gist scope가 필요합니다.');
             }
         }
         throw error;
@@ -32094,18 +32096,20 @@ async function updateGist(token, gistId, content, filename = '🏃 git-runner') 
 //# sourceMappingURL=gist.js.map
 ;// CONCATENATED MODULE: ./dist/main.js
 /**
- * main.ts — git-runner GitHub Action 엔트리 포인트
+ * main.ts — git-runner GitHub Action Entry Point / 액션 엔트리 포인트
  *
- * Purpose: Action inputs를 읽고, 모듈들을 조합하여 Gist를 업데이트한다.
+ * Purpose (목적):
+ *   - EN: Orchestrates input parsing, timezone calculation, GraphQL data fetching, statistics computation, dynamic visual rendering, and Gist synchronization.
+ *   - KR: 환경 변수 및 입력을 로드하고, 통계 계산, 시간대 하늘 및 게이지 트랙 렌더링, 마라톤 타이틀 업데이트를 총괄 실행한다.
  *
- * 실행 흐름:
- *   1. 환경 변수 + Action inputs 로드
- *   2. Timezone 적용된 현재 시간 계산
- *   3. GitHub GraphQL API → Contribution Calendar 조회
- *   4. Streak/Active 통계 계산
- *   5. 오늘의 풍경 + runner 상태 결정
- *   6. Gist 텍스트 생성
- *   7. Gist 업데이트
+ * Execution Pipeline (실행 파이프라인):
+ *   1. Load inputs (GH_TOKEN, gist_id, timezone, username) / 입력 및 토큰 로드
+ *   2. Compute current date/time in timezone / 지정된 Timezone 기준 날짜 및 시간 계산
+ *   3. Fetch Contribution Calendar via GraphQL / 잔디 기여 데이터 조회
+ *   4. Compute Streak and Active statistics / 스트릭 및 활동 통계 계산
+ *   5. Build Dynamic Sky & 365-Day Progress Bar Track / 하늘 및 러너 게이지 트랙 생성
+ *   6. Generate 5-line Gist text card / 최종 5줄 카드 본문 생성
+ *   7. Update Gist with Marathon Division title / 마라톤 승급 타이틀과 함께 Gist 업데이트
  */
 
 
@@ -32114,6 +32118,7 @@ async function updateGist(token, gistId, content, filename = '🏃 git-runner') 
 
 
 /**
+ * Returns the current date in the specified timezone as a UTC Date object.
  * Timezone이 적용된 현재 날짜를 UTC Date 객체로 반환한다.
  */
 function getTodayInTimezone(timezone) {
@@ -32128,6 +32133,7 @@ function getTodayInTimezone(timezone) {
     return new Date(Date.UTC(year, month - 1, day));
 }
 /**
+ * Returns the current hour (0~23) in the specified timezone.
  * 지정된 Timezone의 현재 시간(0~23)을 반환한다.
  */
 function getCurrentHourInTimezone(timezone) {
@@ -32139,26 +32145,30 @@ function getCurrentHourInTimezone(timezone) {
     return parseInt(formatter.format(new Date()), 10);
 }
 /**
+ * Returns the total days in the given year (366 for leap years, 365 for regular years).
  * 해당 연도의 총 일 수(윤년 366, 평년 365)를 반환한다.
  */
 function getTotalDaysInYear(year) {
     const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
     return isLeap ? 366 : 365;
 }
+/**
+ * Main action execution function.
+ * 메인 액션 실행 함수.
+ */
 async function run() {
     try {
-        // 1. 환경 변수 + inputs 로드
+        // 1. EN: Load environment variables and action inputs / KR: 환경 변수 + inputs 로드
         const token = process.env.GH_TOKEN;
         if (!token) {
-            throw new Error('GH_TOKEN 환경 변수가 설정되지 않았습니다. ' +
-                'Repository Settings → Secrets → GH_TOKEN을 추가해주세요.');
+            throw new Error('GH_TOKEN environment variable is not set. Please add GH_TOKEN in Repository Settings → Secrets. / GH_TOKEN 환경 변수가 설정되지 않았습니다.');
         }
         const gistId = core.getInput('gist_id', { required: true });
         const timezone = core.getInput('timezone') || 'Asia/Seoul';
         const username = core.getInput('username') || undefined;
         core.info(`⏰ Timezone: ${timezone}`);
         core.info(`👤 Username: ${username || '(auto-detect from token)'}`);
-        // 2. Timezone 적용된 오늘 날짜 및 시간
+        // 2. EN: Compute local date and hour in timezone / KR: Timezone 적용된 오늘 날짜 및 시간
         const today = getTodayInTimezone(timezone);
         const year = today.getUTCFullYear();
         const month = today.getUTCMonth() + 1;
@@ -32166,26 +32176,26 @@ async function run() {
         const currentHour = getCurrentHourInTimezone(timezone);
         const totalDays = getTotalDaysInYear(year);
         core.info(`📅 Today: ${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} (${currentHour}:00 KST)`);
-        // 3. Contribution Calendar 조회
+        // 3. EN: Fetch Contribution Calendar from GitHub / KR: Contribution Calendar 조회
         core.info('📊 Fetching contribution calendar...');
         const contributions = await fetchContributionCalendar(token, username);
         core.info(`   → ${contributions.length} days loaded`);
-        // 4. Stats 계산
+        // 4. EN: Compute streak and activity statistics / KR: Stats 계산
         const stats = calculateStats(contributions, today);
         core.info(`📈 Stats: streak=${stats.currentStreak}, best=${stats.longestStreak}, active=${stats.activeDays}/${stats.journeyDay}`);
-        // 5. 시간대별 하늘 + 실시간 러너 게이지 트랙 생성
+        // 5. EN: Build dynamic sky and 365-day progress bar track / KR: 시간대별 하늘 + 실시간 러너 게이지 트랙 생성
         const skyLine = getSkyLine(currentHour);
         const runner = getRunnerEmoji(stats.todayActive, stats.currentStreak, stats.todayCount);
         const trackLine = buildProgressBarTrack(stats.journeyDay, totalDays, runner);
         core.info(`🎨 Sky:   ${skyLine}`);
         core.info(`🏃 Track: ${trackLine}`);
-        // 6. Gist 텍스트 생성
+        // 6. EN: Generate 5-line Gist card text / KR: Gist 텍스트 생성
         const content = renderGist(stats, skyLine, trackLine, totalDays);
         core.info('📝 Generated gist content:');
         for (const line of content.split('\n')) {
             core.info(`   ${line}`);
         }
-        // 7. Gist 업데이트 (마라톤 주행 거리 및 승급 등급에 따라 파일명/카드제목 동적 변경)
+        // 7. EN: Update Gist with dynamic Marathon Division title / KR: 마라톤 주행 거리 및 승급 등급에 따라 파일명/카드제목 동적 변경
         const gistFilename = getMarathonTitle(stats.activeDays);
         core.info(`🔄 Updating gist (Filename: "${gistFilename}")...`);
         await updateGist(token, gistId, content, gistFilename);
@@ -32196,7 +32206,7 @@ async function run() {
             core.setFailed(error.message);
         }
         else {
-            core.setFailed('알 수 없는 에러가 발생했습니다.');
+            core.setFailed('Unknown error occurred. / 알 수 없는 에러가 발생했습니다.');
         }
     }
 }

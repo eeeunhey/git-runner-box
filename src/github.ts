@@ -1,25 +1,28 @@
 /**
- * github.ts — GitHub GraphQL API를 통한 Contribution Calendar 조회
+ * github.ts — GitHub GraphQL API Contribution Calendar Client / GitHub GraphQL API를 통한 잔디 데이터 조회
  *
- * Purpose: 올해 1월 1일부터 오늘까지의 Contribution Calendar 데이터를 가져온다.
- * Input:   GH_TOKEN, optional username
- * Output:  ContributionDay[] (날짜별 contribution count)
+ * Purpose (목적):
+ *   - EN: Fetches the user's Contribution Calendar from Jan 1 of the current year to today.
+ *   - KR: 올해 1월 1일부터 오늘까지의 GitHub 기여(Contribution) 캘린더 데이터를 조회한다.
  *
- * GitHub GraphQL API의 contributionsCollection은 최대 1년 범위를 지원하므로,
- * 올해 전체를 한 번의 쿼리로 조회할 수 있다.
+ * Input (입력):
+ *   - `GH_TOKEN`: GitHub Personal Access Token (PAT)
+ *   - `username`: (Optional) Target GitHub username / 대상 사용자명
+ *
+ * Output (출력):
+ *   - `ContributionDay[]`: Daily contribution counts in chronological order / 날짜별 기여 횟수 배열
  */
 
-/** 날짜별 contribution 데이터 */
+/** Daily contribution record / 날짜별 기여 데이터 */
 export interface ContributionDay {
-  /** ISO date string (e.g. "2026-01-15") */
+  /** ISO date string (e.g. "2026-01-15") / ISO 날짜 문자열 */
   date: string
-  /** 해당 날짜의 총 contribution 수 */
+  /** Total contribution count on that date / 해당 날짜의 총 기여/커밋 수 */
   count: number
 }
 
 /**
- * viewer 쿼리: 토큰 소유자 자신의 username을 가져온다.
- * username이 지정되지 않았을 때 사용한다.
+ * GraphQL Query: Fetch viewer login / 로그인한 토큰 소유자의 username 조회
  */
 const VIEWER_LOGIN_QUERY = `
   query {
@@ -30,8 +33,7 @@ const VIEWER_LOGIN_QUERY = `
 `
 
 /**
- * Contribution Calendar 쿼리.
- * contributionsCollection(from, to)로 올해 범위를 지정한다.
+ * GraphQL Query: Fetch contribution calendar for the year / 연간 기여 캘린더 조회
  */
 const CONTRIBUTION_QUERY = `
   query($username: String!, $from: DateTime!, $to: DateTime!) {
@@ -75,9 +77,10 @@ interface ContributionCalendarData {
 }
 
 /**
- * GitHub GraphQL API에 쿼리를 보낸다.
+ * Sends an authenticated POST request to GitHub's GraphQL API.
+ * GitHub GraphQL API에 인증된 쿼리 요청을 전송한다.
  *
- * @throws Error - 네트워크 오류, 인증 실패, GraphQL 에러
+ * @throws Error - Network failure, authentication failure, or GraphQL errors / 네트워크, 인증, GraphQL 오류
  */
 async function graphqlRequest<T>(
   token: string,
@@ -98,11 +101,11 @@ async function graphqlRequest<T>(
   if (!response.ok) {
     if (response.status === 401) {
       throw new Error(
-        'GitHub API 인증 실패: GH_TOKEN이 설정되지 않았거나 만료되었습니다.',
+        'GitHub API Authentication Failed: GH_TOKEN is invalid or expired. / GitHub API 인증 실패: GH_TOKEN이 설정되지 않았거나 만료되었습니다.',
       )
     }
     throw new Error(
-      `GitHub API 요청 실패: HTTP ${response.status} ${response.statusText}`,
+      `GitHub API Request Failed: HTTP ${response.status} ${response.statusText} / GitHub API 요청 실패`,
     )
   }
 
@@ -110,17 +113,18 @@ async function graphqlRequest<T>(
 
   if (result.errors && result.errors.length > 0) {
     const messages = result.errors.map((e) => e.message).join(', ')
-    throw new Error(`GitHub GraphQL 에러: ${messages}`)
+    throw new Error(`GitHub GraphQL Error: ${messages} / GitHub GraphQL 에러`)
   }
 
   if (!result.data) {
-    throw new Error('GitHub API에서 빈 응답을 받았습니다.')
+    throw new Error('Received empty response from GitHub API. / GitHub API에서 빈 응답을 받았습니다.')
   }
 
   return result.data
 }
 
 /**
+ * Fetches the authenticated user's login username.
  * 토큰 소유자의 GitHub username을 조회한다.
  */
 async function fetchViewerLogin(token: string): Promise<string> {
@@ -132,15 +136,12 @@ async function fetchViewerLogin(token: string): Promise<string> {
 }
 
 /**
- * 올해 1월 1일부터 오늘까지의 Contribution Calendar를 조회한다.
+ * Fetches the Contribution Calendar from Jan 1 of the current year to today.
+ * 올해 1월 1일부터 오늘까지의 Contribution Calendar 데이터를 조회한다.
  *
- * @param token - GitHub Personal Access Token (read:user scope 필요)
- * @param username - GitHub username. 없으면 토큰 소유자를 자동 조회.
- * @returns 날짜별 contribution 데이터 (날짜 오름차순)
- *
- * @example
- * const days = await fetchContributionCalendar('ghp_...', 'octocat')
- * // [{ date: '2026-01-01', count: 0 }, { date: '2026-01-02', count: 5 }, ...]
+ * @param token - GitHub Personal Access Token (requires `read:user` or `repo` scope) / GitHub PAT
+ * @param username - Target username (auto-detected if omitted) / 대상 사용자명 (생략 시 자동 조회)
+ * @returns Array of daily contribution objects / 날짜별 기여 데이터 배열
  */
 export async function fetchContributionCalendar(
   token: string,

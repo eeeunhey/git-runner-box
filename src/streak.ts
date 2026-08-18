@@ -1,38 +1,36 @@
 /**
- * streak.ts — Contribution 데이터에서 streak/active 통계 계산
+ * streak.ts — GitHub Streak & Contribution Statistics Calculator / 잔디 스트릭 및 활동 통계 계산
  *
- * Purpose: Contribution Calendar에서 streak, active days, journey day를 계산한다.
- * Input:   ContributionDay[], 오늘 날짜
- * Output:  Stats
+ * Purpose (목적):
+ *   - EN: Derives current streak, longest streak, active days, journey day, and today's commit count from contribution data.
+ *   - KR: GitHub 기여 데이터로부터 현재 스트릭, 최장 스트릭, 총 활동일, 연간 여정 일수, 당일 커밋 수를 계산한다.
  *
- * 설계 원칙:
- * - 하루 빠졌다고 벌주지 않는다 (오늘 아직 미활동이면 어제 기준 streak 유지)
- * - Journey는 활동과 무관하게 1/1부터 계속 증가한다
- * - current_streak: 연속 활동일 (오늘 기준 또는 어제 기준)
- * - longest_streak: 올해 최대 연속 활동일
+ * Design Principles (설계 원칙):
+ *   - EN: Non-punitive design: If no contributions yet today, yesterday's streak is preserved.
+ *   - KR: 비처벌적 설계: 오늘 아직 커밋하지 않았더라도 어제까지의 스트릭을 보존한다.
  */
 
 import type { ContributionDay } from './github.js'
 
-/** streak/active 통계 */
+/** Streak & Contribution Statistics / 스트릭 및 활동 통계 */
 export interface Stats {
-  /** 오늘 contribution이 있었는지 */
+  /** Whether there was contribution activity today / 오늘 기여/커밋 활동이 있었는지 */
   todayActive: boolean
-  /** 오늘 contribution/커밋 수 */
+  /** Exact contribution/commit count today / 오늘 총 기여/커밋 수 */
   todayCount: number
-  /** 현재 연속 활동일 (오늘 또는 어제 기준) */
+  /** Current continuous streak in days / 현재 연속 활동일수 (오늘 또는 어제 기준) */
   currentStreak: number
-  /** 올해 최대 연속 활동일 */
+  /** Longest continuous streak this year / 올해 최대 연속 활동일수 */
   longestStreak: number
-  /** 올해 총 활동일 수 */
+  /** Total active days this year (1 day = 1 km) / 올해 총 활동일수 (누적 주행 거리) */
   activeDays: number
-  /** 1월 1일부터 오늘까지 며칠째인지 (1-indexed) */
+  /** Day of the year from Jan 1 (1-indexed) / 1월 1일부터 오늘까지의 일차 (1~366) */
   journeyDay: number
 }
 
 /**
- * ISO date 문자열("2026-08-17")에서 Date 객체를 생성한다.
- * timezone 영향을 받지 않도록 UTC 기준으로 파싱한다.
+ * Parses an ISO date string ("2026-08-17") to a UTC Date object.
+ * ISO date 문자열에서 UTC 기준 Date 객체를 생성한다.
  */
 function parseDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number)
@@ -40,7 +38,8 @@ function parseDate(dateStr: string): Date {
 }
 
 /**
- * Date를 ISO date 문자열("2026-08-17")로 변환한다.
+ * Formats a Date object to an ISO date string ("2026-08-17").
+ * Date 객체를 YYYY-MM-DD 포맷의 ISO 문자열로 변환한다.
  */
 function formatDate(date: Date): string {
   const y = date.getUTCFullYear()
@@ -50,7 +49,8 @@ function formatDate(date: Date): string {
 }
 
 /**
- * 두 날짜 사이의 일 수 차이를 구한다.
+ * Computes the number of days between two dates.
+ * 두 날짜 사이의 일 수 차이를 계산한다.
  */
 function daysBetween(a: Date, b: Date): number {
   const msPerDay = 86_400_000
@@ -58,15 +58,16 @@ function daysBetween(a: Date, b: Date): number {
 }
 
 /**
- * Contribution Calendar 데이터에서 통계를 계산한다.
+ * Computes comprehensive streak and activity statistics from daily contribution records.
+ * Contribution Calendar 데이터에서 streak, active days, journey day 통계를 계산한다.
  *
- * @param contributions - 날짜별 contribution 데이터 (순서 무관, 내부에서 정렬)
- * @param today - 기준 날짜 (timezone 적용된 "오늘")
- * @returns 계산된 통계
+ * @param contributions - Array of daily contribution records / 날짜별 기여 데이터
+ * @param today - Target date in the user's timezone / timezone 기준 오늘 날짜
+ * @returns Computed statistics / 계산된 통계 객체
  *
  * @example
  * const stats = calculateStats(contributions, new Date('2026-08-17'))
- * // { todayActive: true, currentStreak: 8, longestStreak: 27, activeDays: 103, journeyDay: 229 }
+ * // { todayActive: true, todayCount: 5, currentStreak: 12, longestStreak: 85, activeDays: 156, journeyDay: 230 }
  */
 export function calculateStats(
   contributions: ContributionDay[],
@@ -87,7 +88,7 @@ export function calculateStats(
     }
   }
 
-  // 날짜별 count 및 active 여부를 Map으로 구성 (빠른 조회)
+  // EN: Build a fast-lookup map for active status per date / KR: 날짜별 count 및 active 여부 맵
   const activeMap = new Map<string, boolean>()
   let todayCount = 0
   for (const day of contributions) {
@@ -97,18 +98,17 @@ export function calculateStats(
     }
   }
 
-  // 오늘 활동 여부
+  // EN: Check if there was activity today / KR: 오늘 활동 여부
   const todayActive = todayCount > 0
 
-  // 총 활동일
+  // EN: Compute total active days / KR: 올해 총 활동일수
   let activeDays = 0
   for (const [, isActive] of activeMap) {
     if (isActive) activeDays++
   }
 
-  // 현재 streak 계산
-  // 오늘 active → 오늘부터 역순 카운트
-  // 오늘 !active → 어제부터 역순 카운트 (오늘은 아직 기회가 남았으므로)
+  // EN: Compute current continuous streak (count backwards from today if active, else from yesterday)
+  // KR: 현재 streak 계산 (오늘 활동 시 오늘부터, 미활동 시 어제부터 역순 계산)
   let currentStreak = 0
   const startDate = todayActive ? today : new Date(today.getTime() - 86_400_000)
 
@@ -121,8 +121,7 @@ export function calculateStats(
     }
   }
 
-  // 최대 streak 계산 (올해 전체)
-  // 날짜 정렬 후 순차 순회
+  // EN: Compute longest continuous streak this year / KR: 올해 최대 연속 활동일 계산
   const sortedDates = Array.from(activeMap.keys()).sort()
   let longestStreak = 0
   let tempStreak = 0
