@@ -13,7 +13,7 @@
        ☀                 ☁
 🌱════════════🏃💨───🌳─────────🚩
 
-● Today   🔥 12 days   🏆 85   🌱 156/230
+● Today (5)   🔥 12 days   🏆 85   🌱 156/230
 ```
 
 This project is inspired by the [awesome-pinned-gists](https://github.com/matchai/awesome-pinned-gists) project.
@@ -114,12 +114,12 @@ jobs:
 ## 📊 Stats Explained
 
 ```text
-● Today   🔥 12 days   🏆 85   🌱 156/230
-│         │            │       │
-│         │            │       └── Active days (156) / Day of year (230)
-│         │            └── Longest streak this year
-│         └── Current continuous streak
-└── Today's activity (● active / ○ not yet)
+● Today (5)   🔥 12 days   🏆 85   🌱 156/230
+│             │            │       │
+│             │            │       └── Active days (156) / Day of year (230)
+│             │            └── Longest streak this year
+│             └── Current continuous streak
+└── Today's activity (● active / ○ not yet) & commit count (5)
 ```
 
 ---

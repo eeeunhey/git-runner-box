@@ -16,6 +16,7 @@ import type { Stats } from '../streak.js'
 function makeStats(overrides: Partial<Stats> = {}): Stats {
   return {
     todayActive: true,
+    todayCount: 3,
     currentStreak: 8,
     longestStreak: 27,
     activeDays: 103,

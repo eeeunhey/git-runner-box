@@ -89,7 +89,7 @@ describe('calculateStats', () => {
     expect(stats.activeDays).toBe(10)
   })
 
-  it('오늘 활동 → todayActive = true', () => {
+  it('오늘 활동 → todayActive = true, todayCount = 3', () => {
     const contributions: ContributionDay[] = [
       { date: '2026-08-17', count: 3 },
     ]
@@ -97,9 +97,10 @@ describe('calculateStats', () => {
 
     const stats = calculateStats(contributions, today)
     expect(stats.todayActive).toBe(true)
+    expect(stats.todayCount).toBe(3)
   })
 
-  it('오늘 미활동 → todayActive = false', () => {
+  it('오늘 미활동 → todayActive = false, todayCount = 0', () => {
     const contributions: ContributionDay[] = [
       { date: '2026-08-17', count: 0 },
     ]
@@ -107,6 +108,7 @@ describe('calculateStats', () => {
 
     const stats = calculateStats(contributions, today)
     expect(stats.todayActive).toBe(false)
+    expect(stats.todayCount).toBe(0)
   })
 
   it('오늘 미활동이지만 어제까지 연속 → streak은 어제 기준으로 유지', () => {

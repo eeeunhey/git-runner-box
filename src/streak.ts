@@ -18,6 +18,8 @@ import type { ContributionDay } from './github.js'
 export interface Stats {
   /** 오늘 contribution이 있었는지 */
   todayActive: boolean
+  /** 오늘 contribution/커밋 수 */
+  todayCount: number
   /** 현재 연속 활동일 (오늘 또는 어제 기준) */
   currentStreak: number
   /** 올해 최대 연속 활동일 */
@@ -77,6 +79,7 @@ export function calculateStats(
   if (contributions.length === 0) {
     return {
       todayActive: false,
+      todayCount: 0,
       currentStreak: 0,
       longestStreak: 0,
       activeDays: 0,
@@ -84,14 +87,18 @@ export function calculateStats(
     }
   }
 
-  // 날짜별 active 여부를 Map으로 구성 (빠른 조회)
+  // 날짜별 count 및 active 여부를 Map으로 구성 (빠른 조회)
   const activeMap = new Map<string, boolean>()
+  let todayCount = 0
   for (const day of contributions) {
     activeMap.set(day.date, day.count > 0)
+    if (day.date === todayStr) {
+      todayCount = day.count
+    }
   }
 
   // 오늘 활동 여부
-  const todayActive = activeMap.get(todayStr) === true
+  const todayActive = todayCount > 0
 
   // 총 활동일
   let activeDays = 0
@@ -133,6 +140,7 @@ export function calculateStats(
 
   return {
     todayActive,
+    todayCount,
     currentStreak,
     longestStreak,
     activeDays,

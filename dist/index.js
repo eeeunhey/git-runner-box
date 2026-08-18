@@ -27775,19 +27775,24 @@ function calculateStats(contributions, today) {
     if (contributions.length === 0) {
         return {
             todayActive: false,
+            todayCount: 0,
             currentStreak: 0,
             longestStreak: 0,
             activeDays: 0,
             journeyDay,
         };
     }
-    // 날짜별 active 여부를 Map으로 구성 (빠른 조회)
+    // 날짜별 count 및 active 여부를 Map으로 구성 (빠른 조회)
     const activeMap = new Map();
+    let todayCount = 0;
     for (const day of contributions) {
         activeMap.set(day.date, day.count > 0);
+        if (day.date === todayStr) {
+            todayCount = day.count;
+        }
     }
     // 오늘 활동 여부
-    const todayActive = activeMap.get(todayStr) === true;
+    const todayActive = todayCount > 0;
     // 총 활동일
     let activeDays = 0;
     for (const [, isActive] of activeMap) {
@@ -27826,6 +27831,7 @@ function calculateStats(contributions, today) {
     }
     return {
         todayActive,
+        todayCount,
         currentStreak,
         longestStreak,
         activeDays,
@@ -27967,13 +27973,14 @@ function buildCourseLine(template, runner) {
  */
 function renderGist(stats, courseLine, year) {
     const todayMarker = stats.todayActive ? '●' : '○';
+    const todayText = `${todayMarker} Today (${stats.todayCount})`;
     const streakText = stats.currentStreak === 1 ? '1 day' : `${stats.currentStreak} days`;
     const lines = [
         `🏃 git-runner · ${year}`,
         '',
         courseLine,
         '',
-        `${todayMarker} Today   🔥 ${streakText}   🏆 ${stats.longestStreak}   🌱 ${stats.activeDays}/${stats.journeyDay}`,
+        `${todayText}   🔥 ${streakText}   🏆 ${stats.longestStreak}   🌱 ${stats.activeDays}/${stats.journeyDay}`,
     ];
     return lines.join('\n');
 }

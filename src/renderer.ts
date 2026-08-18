@@ -38,6 +38,7 @@ export function renderGist(
   year: number,
 ): string {
   const todayMarker = stats.todayActive ? '●' : '○'
+  const todayText = `${todayMarker} Today (${stats.todayCount})`
   const streakText = stats.currentStreak === 1 ? '1 day' : `${stats.currentStreak} days`
 
   const lines = [
@@ -45,7 +46,7 @@ export function renderGist(
     '',
     courseLine,
     '',
-    `${todayMarker} Today   🔥 ${streakText}   🏆 ${stats.longestStreak}   🌱 ${stats.activeDays}/${stats.journeyDay}`,
+    `${todayText}   🔥 ${streakText}   🏆 ${stats.longestStreak}   🌱 ${stats.activeDays}/${stats.journeyDay}`,
   ]
 
   return lines.join('\n')
