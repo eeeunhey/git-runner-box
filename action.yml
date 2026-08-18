@@ -1,6 +1,6 @@
-name: "git-runner"
-author: ""
-description: "🏃 A tiny runner that moves with your GitHub activity — Dynamic Pinned Gist"
+name: "git-runner-box"
+author: "eeeunhey"
+description: "🏃 A tiny runner that moves with your GitHub activity in a dynamic pinned Gist"
 
 branding:
   icon: "activity"
