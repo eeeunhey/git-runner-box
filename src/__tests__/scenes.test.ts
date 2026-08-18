@@ -16,6 +16,7 @@ import {
   buildCourseLine,
   getSkyLine,
   buildProgressBarTrack,
+  getMarathonTitle,
 } from '../scenes.js'
 
 describe('getSeason', () => {
@@ -160,5 +161,42 @@ describe('buildProgressBarTrack', () => {
     const track = buildProgressBarTrack(365, 365, '🏃')
     expect(track).toContain('100%')
     expect(track).toContain('🚩]')
+  })
+})
+
+describe('getMarathonTitle', () => {
+  it('0 ~ 20km → 5K City Jogger', () => {
+    expect(getMarathonTitle(0)).toBe('👟 5K City Jogger (0km)')
+    expect(getMarathonTitle(15)).toBe('👟 5K City Jogger (15km)')
+    expect(getMarathonTitle(20)).toBe('👟 5K City Jogger (20km)')
+  })
+
+  it('21 ~ 50km → 10K Road Racer', () => {
+    expect(getMarathonTitle(21)).toBe('🏃 10K Road Racer (21km)')
+    expect(getMarathonTitle(42)).toBe('🏃 10K Road Racer (42km)')
+    expect(getMarathonTitle(50)).toBe('🏃 10K Road Racer (50km)')
+  })
+
+  it('51 ~ 100km → Half-Marathon Runner', () => {
+    expect(getMarathonTitle(51)).toBe('🏅 Half-Marathon Runner (51km)')
+    expect(getMarathonTitle(80)).toBe('🏅 Half-Marathon Runner (80km)')
+    expect(getMarathonTitle(100)).toBe('🏅 Half-Marathon Runner (100km)')
+  })
+
+  it('101 ~ 150km → Full-Marathon Finisher', () => {
+    expect(getMarathonTitle(101)).toBe('🏆 Full-Marathon Finisher (101km)')
+    expect(getMarathonTitle(130)).toBe('🏆 Full-Marathon Finisher (130km)')
+    expect(getMarathonTitle(150)).toBe('🏆 Full-Marathon Finisher (150km)')
+  })
+
+  it('151 ~ 250km → Ultra-Marathoner', () => {
+    expect(getMarathonTitle(151)).toBe('🚀 Ultra-Marathoner (151km)')
+    expect(getMarathonTitle(156)).toBe('🚀 Ultra-Marathoner (156km)')
+    expect(getMarathonTitle(250)).toBe('🚀 Ultra-Marathoner (250km)')
+  })
+
+  it('251km+ → Trans-Continental Marathoner', () => {
+    expect(getMarathonTitle(251)).toBe('👑 Trans-Continental Marathoner (251km)')
+    expect(getMarathonTitle(300)).toBe('👑 Trans-Continental Marathoner (300km)')
   })
 })

@@ -111,6 +111,19 @@ The runner dynamically adapts based on your **daily commit count** and **streak 
 | 🚶 **Walking** | **0 commits** | Protected (`🔥 N days`) | `○ Today (0)` | **Pacing Mode**: No commits yet today, but yesterday's streak is preserved. Warming up to code! |
 | 🧘 **Resting** | **0 commits** | Reset (`🔥 0 days`) | `○ Today (0)` | **Rest Day**: Recharging for the next journey. A healthy break, zero punishment. |
 
+### 🏆 Marathon Mileage & Tier Progression
+
+Your **active days** are converted into **marathon distance (1 active day = 1 km)**, dynamically upgrading your Gist card title:
+
+| Distance | Marathon Division | Card Title (Filename) | Milestone |
+|---|---|---|---|
+| `0 ~ 20 km` | 👟 **5K City Jogger** | `👟 5K City Jogger (Nkm)` | Starting the journey |
+| `21 ~ 50 km` | 🏃 **10K Road Racer** | `🏃 10K Road Racer (Nkm)` | City race challenger |
+| `51 ~ 100 km` | 🏅 **Half-Marathon Runner** | `🏅 Half-Marathon Runner (Nkm)` | Half marathon mastery |
+| `101 ~ 150 km` | 🏆 **Full-Marathon Finisher** | `🏆 Full-Marathon Finisher (Nkm)` | Official 42.195km+ finisher |
+| `151 ~ 250 km` | 🚀 **Ultra-Marathoner** | `🚀 Ultra-Marathoner (Nkm)` | Endurance champion |
+| `251 km+` | 👑 **Trans-Continental Marathoner** | `👑 Trans-Continental Marathoner (Nkm)` | Legend of the year |
+
 > 💡 **Design Philosophy**:
 > - **Non-punitive Streak**: If you haven't committed yet today, your previous streak is preserved as `🚶 Walking`. It does not reset until the day fully ends without contributions.
 > - **Live Daily Count**: `● Today (N)` displays the exact number of commits / contributions made today.

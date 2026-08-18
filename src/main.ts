@@ -20,6 +20,7 @@ import {
   getRunnerEmoji,
   getSkyLine,
   buildProgressBarTrack,
+  getMarathonTitle,
 } from './scenes.js'
 import { renderGist } from './renderer.js'
 import { updateGist } from './gist.js'
@@ -116,8 +117,8 @@ async function run(): Promise<void> {
       core.info(`   ${line}`)
     }
 
-    // 7. Gist 업데이트 (러너 상태에 따라 파일명/카드제목 동적 변경)
-    const gistFilename = `${runner} git-runner`
+    // 7. Gist 업데이트 (마라톤 주행 거리 및 승급 등급에 따라 파일명/카드제목 동적 변경)
+    const gistFilename = getMarathonTitle(stats.activeDays)
     core.info(`🔄 Updating gist (Filename: "${gistFilename}")...`)
     await updateGist(token, gistId, content, gistFilename)
 

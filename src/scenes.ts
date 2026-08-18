@@ -152,6 +152,29 @@ export function buildProgressBarTrack(
 }
 
 /**
+ * 누적 활동일(activeDays = 누적 주행 거리 km)에 따라 마라토너 등급 카드 제목을 반환한다.
+ *
+ * - 0 ~ 20km:   👟 5K City Jogger (Nkm)
+ * - 21 ~ 50km:  🏃 10K Road Racer (Nkm)
+ * - 51 ~ 100km: 🏅 Half-Marathon Runner (Nkm)
+ * - 101 ~ 150km:🏆 Full-Marathon Finisher (Nkm)
+ * - 151 ~ 250km:🚀 Ultra-Marathoner (Nkm)
+ * - 251km+:     👑 Trans-Continental Marathoner (Nkm)
+ *
+ * @param activeDays - 올해 총 활동일 수 (1일 = 1km 주행)
+ * @returns Gist 카드 제목 (Filename)
+ */
+export function getMarathonTitle(activeDays: number): string {
+  const km = activeDays
+  if (km <= 20) return `👟 5K City Jogger (${km}km)`
+  if (km <= 50) return `🏃 10K Road Racer (${km}km)`
+  if (km <= 100) return `🏅 Half-Marathon Runner (${km}km)`
+  if (km <= 150) return `🏆 Full-Marathon Finisher (${km}km)`
+  if (km <= 250) return `🚀 Ultra-Marathoner (${km}km)`
+  return `👑 Trans-Continental Marathoner (${km}km)`
+}
+
+/**
  * Scene template의 {runner} placeholder를 실제 runner 이모지로 치환한다.
  * (하위 호환성 유지)
  */
