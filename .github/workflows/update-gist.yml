@@ -1,4 +1,4 @@
-name: 🏃 Test git-runner
+name: Update gist
 
 on:
   schedule:
@@ -10,10 +10,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  update:
+  update-gist:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: ./
         with:
           gist_id: ${{ secrets.GIST_ID }}
