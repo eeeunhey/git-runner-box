@@ -146,14 +146,17 @@ async function fetchViewerLogin(token: string): Promise<string> {
 export async function fetchContributionCalendar(
   token: string,
   username?: string,
+  today?: Date,
 ): Promise<ContributionDay[]> {
   const resolvedUsername = username || (await fetchViewerLogin(token))
 
-  const now = new Date()
-  const yearStart = new Date(Date.UTC(now.getFullYear(), 0, 1))
-  const yearEnd = new Date(
-    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59),
-  )
+  const targetDate = today || new Date()
+  const year = targetDate.getUTCFullYear()
+  const month = targetDate.getUTCMonth()
+  const day = targetDate.getUTCDate()
+
+  const yearStart = new Date(Date.UTC(year, 0, 1))
+  const yearEnd = new Date(Date.UTC(year, month, day, 23, 59, 59))
 
   const data = await graphqlRequest<ContributionCalendarData>(
     token,

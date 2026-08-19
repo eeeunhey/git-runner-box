@@ -96,11 +96,11 @@ async function run(): Promise<void> {
     const currentHour = getCurrentHourInTimezone(timezone)
     const totalDays = getTotalDaysInYear(year)
 
-    core.info(`📅 Today: ${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} (${currentHour}:00 KST)`)
+    core.info(`📅 Today: ${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} (${currentHour}:00 ${timezone})`)
 
     // 3. EN: Fetch Contribution Calendar from GitHub / KR: Contribution Calendar 조회
     core.info('📊 Fetching contribution calendar...')
-    const contributions = await fetchContributionCalendar(token, username)
+    const contributions = await fetchContributionCalendar(token, username, today)
     core.info(`   → ${contributions.length} days loaded`)
 
     // 4. EN: Compute streak and activity statistics / KR: Stats 계산

@@ -27697,11 +27697,14 @@ async function fetchViewerLogin(token) {
  * @param username - Target username (auto-detected if omitted) / 대상 사용자명 (생략 시 자동 조회)
  * @returns Array of daily contribution objects / 날짜별 기여 데이터 배열
  */
-async function fetchContributionCalendar(token, username) {
+async function fetchContributionCalendar(token, username, today) {
     const resolvedUsername = username || (await fetchViewerLogin(token));
-    const now = new Date();
-    const yearStart = new Date(Date.UTC(now.getFullYear(), 0, 1));
-    const yearEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59));
+    const targetDate = today || new Date();
+    const year = targetDate.getUTCFullYear();
+    const month = targetDate.getUTCMonth();
+    const day = targetDate.getUTCDate();
+    const yearStart = new Date(Date.UTC(year, 0, 1));
+    const yearEnd = new Date(Date.UTC(year, month, day, 23, 59, 59));
     const data = await graphqlRequest(token, CONTRIBUTION_QUERY, {
         username: resolvedUsername,
         from: yearStart.toISOString(),
@@ -32175,10 +32178,10 @@ async function run() {
         const day = today.getUTCDate();
         const currentHour = getCurrentHourInTimezone(timezone);
         const totalDays = getTotalDaysInYear(year);
-        core.info(`📅 Today: ${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} (${currentHour}:00 KST)`);
+        core.info(`📅 Today: ${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} (${currentHour}:00 ${timezone})`);
         // 3. EN: Fetch Contribution Calendar from GitHub / KR: Contribution Calendar 조회
         core.info('📊 Fetching contribution calendar...');
-        const contributions = await fetchContributionCalendar(token, username);
+        const contributions = await fetchContributionCalendar(token, username, today);
         core.info(`   → ${contributions.length} days loaded`);
         // 4. EN: Compute streak and activity statistics / KR: Stats 계산
         const stats = calculateStats(contributions, today);
